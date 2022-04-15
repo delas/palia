@@ -10,7 +10,7 @@ public class Utils {
 	public static List<String> EquivalentExceptions = Arrays.asList("@Start", "@End");
 
 	public static boolean IsEquivalent(Node n0, Node n1) {
-		return IsEquivalent(n0, n1, true);
+		return IsEquivalent(n0, n1, false);
 	}
 
 	public static boolean IsEquivalent(Node n0, Node n1, boolean FullEquivalence) { // TODO: verify
