@@ -35,17 +35,25 @@ public class test {
 		XLog log = factory.createLog();
 		XTrace t1 = factory.createTrace();
 		t1.add(createEvent("A"));
-		t1.add(createEvent("B"));
+		t1.add(createEvent("B1"));
 		t1.add(createEvent("C"));
 		t1.add(createEvent("E"));
+		t1.add(createEvent("G"));
 		XTrace t2 = factory.createTrace();
-		t2.add(createEvent("K"));
-		t2.add(createEvent("B"));
+		t2.add(createEvent("A"));
+		t2.add(createEvent("B2"));
 		t2.add(createEvent("C"));
 		t2.add(createEvent("E"));
+		t2.add(createEvent("F"));
+		XTrace t3 = factory.createTrace();
+		t3.add(createEvent("A"));
+		t3.add(createEvent("B"));
+		t3.add(createEvent("C"));
+		t3.add(createEvent("F"));
 		
 		log.add(t1);
 		log.add(t2);
+		log.add(t3);
 		return log;
 	}
 	

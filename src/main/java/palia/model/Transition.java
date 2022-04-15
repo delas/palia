@@ -28,6 +28,10 @@ public class Transition {
 		owner.registerTransition(this);
 	}
 	
+	public boolean isParallel() {
+		return sourceNodes.size() > 1 || endNodes.size() > 1;
+	}
+	
 	@Override
 	public String toString() {
 		String source = String.join(", ", getSourceNodes().stream().map(n -> n.getName()).sorted().toList());

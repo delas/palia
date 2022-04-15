@@ -13,7 +13,7 @@ public class Utils {
 		return IsEquivalent(n0, n1, true);
 	}
 
-	public static boolean IsEquivalent(Node n0, Node n1, boolean FullEquivalence) {
+	public static boolean IsEquivalent(Node n0, Node n1, boolean FullEquivalence) { // TODO: verify
 		if (!n0.getName().equals(n1.getName())) return false;
 		if (EquivalentExceptions.contains(n0.getName())) return true;
 		if (!FullEquivalence) return true;

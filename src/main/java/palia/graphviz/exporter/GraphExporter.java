@@ -20,8 +20,11 @@ public class GraphExporter {
 		Map<UUID, DotNode> idToNodes = new HashMap<>();
 		
 		Dot dot = new Dot();
+		dot.setOption("rankdir", "LR");
 		for (Node n : tpa.getNodes()) {
 			DotNode dotNode = dot.addNode(n.getName());
+			dotNode.setOption("shape", "box");
+			dotNode.setOption("style", "rounded");
 			idToNodes.put(n.getId(), dotNode);
 		}
 		
