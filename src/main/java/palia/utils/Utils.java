@@ -17,6 +17,7 @@ public class Utils {
 		if (!n0.getName().equals(n1.getName())) return false;
 		if (EquivalentExceptions.contains(n0.getName())) return true;
 		if (!FullEquivalence) return true;
+		//TODO: Implement IDKeys
 		return n0.getId().equals(n1.getId());
 	}
 }
