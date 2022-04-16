@@ -26,7 +26,9 @@ public class Palia {
 		
 		RemoveRepeatedTransitions(res);
 		FuseEndNodes(res);
-		FuseMilestones(res);
+		//TODO: MIlestones is for Interactive Palia 
+		//(Alert: This implementation said always J for milestone)
+		//FuseMilestones(res); 
 		
 		TransitionsMergeMode transmode = TransitionsMergeMode.Equivalent;
 		
