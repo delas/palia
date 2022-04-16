@@ -21,13 +21,13 @@ public class test {
 	private static XFactory factory = new XFactoryNaiveImpl();
 	
 	public static void main(String[] args) throws IOException {
-		GraphExporter.exportSVG(mine(), new File("C:\\Users\\andbur\\Desktop\\out.svg"));
+		GraphExporter.exportSVG(mine(), new File("C:\\Temp\\out.svg"));
 		System.out.println("done");
 	}
 	
 	public static TPA mine() {
 		Palia p = new Palia();
-		return p.mine(getLog());
+		return p.mine(getLog1());
 	}
 	
 	public static XLog getLog() {
@@ -61,6 +61,55 @@ public class test {
 		XEvent e = factory.createEvent();
 		XConceptExtension.instance().assignName(e, name);
 		return e;
+	}
+	
+	
+	public static XLog getLogbug() {
+		String res ="J E F T J A";
+		return getLogfromString(res);
+	}
+	
+	public static XLog getLog0() {
+		String res = "A B1 C E G\n"
+				+ "A B2 C E F\n"
+				+ "A B C F";
+		return getLogfromString(res);
+	}
+	
+	
+	public static XLog getLog1() {
+		String res = "A C B D G\n"
+				+ "A B C D G\n"
+				+ "A E F T D H\n"
+				+ "A E F T E F T E F T D H\n"
+				+ "A W W W A\n"
+				+ "A P E F T P A\n"
+				+ "A X Y Z D H\n"
+				+ "A X Z Y D H\n"
+				+ "A Y Z X D H\n"
+				+ "A Y X Z D H\n"
+				+ "A Z X Y D H\n"
+				+ "A Z Y X D H";
+		return getLogfromString(res);
+	}
+	
+	public static XLog getLogfromString(String s) 
+	{
+		XLog log = factory.createLog();
+		String[] st = s.split("\n");
+		for(String tline : st) 
+		{
+			XTrace trc = factory.createTrace();
+			String [] token = tline.split(" ");
+			for(String t : token) 
+			{
+				trc.add(createEvent(t));
+			}
+			log.add(trc);
+		}
+		
+		return log;
+		
 	}
 	
 	public static TPA getSimple() {

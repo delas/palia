@@ -26,7 +26,9 @@ public class Palia {
 		
 		RemoveRepeatedTransitions(res);
 		FuseEndNodes(res);
-		FuseMilestones(res);
+		//TODO: MIlestones is for Interactive Palia 
+		//(Alert: This implementation said always J for milestone)
+		//FuseMilestones(res); 
 		
 		TransitionsMergeMode transmode = TransitionsMergeMode.Equivalent;
 		
@@ -135,8 +137,10 @@ public class Palia {
 			Collection<Node> f = tpa.getFinalNodes();
 			changed = false;
 			for(Node n0 : f) {
-				for(Node n1 : f) {
-					if (n0 != n1 && Utils.IsEquivalent(n0, n1)) {
+				Collection<Node> f0 = tpa.getFinalNodes();
+				for(Node n1 : f0) {
+					//As the collection is modified in fusing it is necessary to test if TPA Contains n0
+					if (n0 != n1 && f0.contains(n0) && Utils.IsEquivalent(n0, n1)) {
 						FuseNodes(tpa, n0, n1);
 						changed = true;
 					}
@@ -151,8 +155,10 @@ public class Palia {
 			Collection<Node> f = GetMilestones(tpa);
 			changed = false;
 			for (Node n0 : f) {
-				for (Node n1 : f) {
-					if (n0 != n1 && Utils.IsEquivalent(n0, n1)) {
+				Collection<Node> f0 = GetMilestones(tpa);
+				for (Node n1 : f0) {
+					//As the collection is modified in fusing it is necessary to test if TPA Contains n0
+					if (n0 != n1 && f0.contains(n0) && Utils.IsEquivalent(n0, n1)) {
 						FuseNodes(tpa, n0, n1);
 						changed = true;
 					}
