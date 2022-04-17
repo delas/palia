@@ -21,7 +21,7 @@ public class test {
 	private static XFactory factory = new XFactoryNaiveImpl();
 	
 	public static void main(String[] args) throws IOException {
-		GraphExporter.exportSVG(mine(), new File("C:\\Temp\\out.svg"));
+		GraphExporter.exportSVG(mine(), new File("output/out.svg"));
 		System.out.println("done");
 	}
 	
