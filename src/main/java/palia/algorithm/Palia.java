@@ -3,7 +3,9 @@ package palia.algorithm;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 import org.deckfour.xes.extension.std.XConceptExtension;
@@ -19,6 +21,7 @@ import palia.utils.Utils;
 public class Palia {
 
 	public static List<String> MILESTONES = Arrays.asList("J");
+	private ParallelIdentificationMode ParallelIdentificationPolicy = ParallelIdentificationMode.SplitConcurrence;
 	
 	public TPA mine(XLog log) {
 		TPA res = SimpleAcceptorTree(log);
@@ -39,8 +42,8 @@ public class Palia {
 			res = ForwardMerge(res, transmode);
 		}
 		
-//		res = ParallelForwardMerge(res);
-//		
+		res = ParallelForwardMerge(res);
+		
 //		if (transmode == TransitionsMergeMode.Equivalent) {
 //			while (nodesnumber > res.getNodes().size()) {
 //				nodesnumber = res.getNodes().size();
@@ -331,6 +334,106 @@ public class Palia {
 		return tpa;
 	}
 	
+	private TPA ParallelForwardMerge(TPA tpa) {
+		Set<Node> nodes = new HashSet<>(tpa.getNodes());
+		for (Node n : nodes) {
+			GetParallelHypothesis(tpa, n);
+		}
+		return tpa;
+	}
+	
+	private void GetParallelHypothesis(TPA tpa, Node n0) {
+		Collection<Node> acc0 = GetParallelFollowingNodes(tpa, n0);
+		Collection<Node> region = GetParalleForwardAccesibleNodes(tpa, n0);
+		
+//		acc0.stream().filter(n -> n.is)
+//		var grps = Grouper<TPATemplate.Node>.CreateGroups(acc0, (TPATemplate.Node[] g) => { return IsParallel(tpa, region, g); }).ToArray();
+	}
+
+//	void GetParallelHypothesis(TPATemplate tpa, TPATemplate.Node n0)
+//    {
+//        var acc0 = GetParallelFollowingNodes(tpa, n0).ToArray();
+//        var region = GetParalleForwardAccesibleNodes(tpa, n0).ToArray();
+//        var grps = Grouper<TPATemplate.Node>.CreateGroups(acc0, (TPATemplate.Node[] g) => { return IsParallel(tpa, region, g); }).ToArray();
+//
+//        foreach (var g in grps.Where(x => x.Length > 1))
+//        {
+//            var sync = GetForwardSyncronizingNode(tpa, n0, g);
+//            if (sync != null)
+//            {
+//                var mp = MoreParallels(tpa, sync.Value.Region, g);// detec if there are more parallels on the region
+//                if (mp.Length == 0)
+//                {
+//                    ApplyParallel(tpa, n0, g, sync.Value.Region, sync.Value.Sync);
+//                }
+//                else
+//                {
+//                    ApplyParallel(tpa, n0, g.Union(mp).ToArray(), sync.Value.Region, sync.Value.Sync);
+//                }
+//            }
+//        }
+//
+//
+//    }
+	private boolean IsParallel(TPA tpa, Collection<Node> region, Collection<Node> g) {
+		switch (ParallelIdentificationPolicy) {
+		case Inductive:
+			return InductiveMinerParallelMethod(tpa, region, g);
+		default:
+			return SplitMinerIsParallelMethod(tpa, region, g);
+		}
+	}
+	
+	private boolean InductiveMinerParallelMethod(TPA t, Collection<Node> region, Collection<Node> g) {
+		for (Node n0 : g) {
+			for (Node n1 : g) {
+				if (n1 == n0) {
+					continue;
+				}
+				
+				Collection<Node> eq0 = GetEquivalentNodes(t, n0, region);
+				Collection<Node> eq1 = GetEquivalentNodes(t, n0, region);
+				
+				boolean back = eq0.stream().anyMatch(x -> eq1.stream().anyMatch(y -> CutsHelper.IsBackwarded(x, y)));
+				boolean fow = eq0.stream().anyMatch(x -> eq1.stream().anyMatch(y -> CutsHelper.IsBackwarded(x, y)));
+				
+				if (!back || !fow) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+	
+	private boolean SplitMinerIsParallelMethod(TPA tpa, Collection<Node> region, Collection<Node> g) {
+		return ConcurrentNodesHelper.AreParallelSplitMiner(tpa, region, g);
+	}
+	
+	private Collection<Node> GetParalleForwardAccesibleNodes(TPA tpa, Node n0) {
+		Set<Node> res = new HashSet<>();
+		Queue<Node> ProcessNodes = new LinkedList<>();
+		ProcessNodes.offer(n0);
+		while(ProcessNodes.size() > 0) {
+			Node n = ProcessNodes.poll();
+			res.add(n);
+			for(Node nx : GetParallelFollowingNodes(tpa, n)) {
+				if (!res.contains(nx) && !ProcessNodes.contains(nx)) {
+					ProcessNodes.offer(nx);
+				}
+			}
+		}
+		
+		return res;
+	}
+
+	private Collection<Node> GetParallelFollowingNodes(TPA tpa, Node n0) {
+		Set<Node> res = new HashSet<>();
+		for(Transition nt : n0.getOutTransitions()) {
+			res.addAll(nt.getEndNodes());
+		}
+		return res;
+	}
+
 	private Collection<Transition> GetAccesibleTransitions(TPA tpa, Transition nt0, boolean backward) {
 		Set<Transition> res = new HashSet<>();
 		if (backward) {
