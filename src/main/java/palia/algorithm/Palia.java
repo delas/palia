@@ -1,5 +1,6 @@
 package palia.algorithm;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -7,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.deckfour.xes.extension.std.XConceptExtension;
 import org.deckfour.xes.model.XEvent;
@@ -33,7 +35,7 @@ public class Palia {
 		//(Alert: This implementation said always J for milestone)
 		//FuseMilestones(res); 
 		
-		TransitionsMergeMode transmode = TransitionsMergeMode.Equivalent;
+		TransitionsMergeMode transmode = TransitionsMergeMode.Inline;
 		
 		int nodesnumber = Integer.MAX_VALUE;
 		while (nodesnumber > res.getNodes().size()) {
@@ -335,46 +337,346 @@ public class Palia {
 	}
 	
 	private TPA ParallelForwardMerge(TPA tpa) {
-		Set<Node> nodes = new HashSet<>(tpa.getNodes());
+		//Set<Node> nodes = new HashSet<>(tpa.getNodes());
+		Collection<Node> nodes = GetForwardOrderedNodes(tpa);
 		for (Node n : nodes) {
 			GetParallelHypothesis(tpa, n);
 		}
 		return tpa;
 	}
 	
+	private Collection<Node> GetForwardOrderedNodes(TPA tpa)
+	{// for having nodes always in forward order
+		Collection<Node> res = new ArrayList<Node>();
+		for(var s0 : tpa.getStartingNodes()) {
+			res.add(s0);
+			Collection<Node> all = GetParalleForwardAccesibleNodes(tpa, s0);
+			for(var a :all) {
+				if(!res.contains(a)) res.add(a);	
+			}
+		}
+		return res;
+	}
+	
 	private void GetParallelHypothesis(TPA tpa, Node n0) {
 		Collection<Node> acc0 = GetParallelFollowingNodes(tpa, n0);
 		Collection<Node> region = GetParalleForwardAccesibleNodes(tpa, n0);
 		
-//		acc0.stream().filter(n -> n.is)
-//		var grps = Grouper<TPATemplate.Node>.CreateGroups(acc0, (TPATemplate.Node[] g) => { return IsParallel(tpa, region, g); }).ToArray();
+		Collection<Node[]> groups = CreateParallelGroups(tpa,acc0,region);
+		
+		for (var g : groups) {
+			if (g.length>1) {
+				var sync = GetForwardSyncronizingNode(tpa, n0, g);
+				 if (sync != null) {
+					 var mp = MoreParallels(tpa, sync.Region, g);// detec if there are more parallels on the region
+	                if (mp.size() == 0)
+	                {
+//	                    ApplyParallel(tpa, n0, g, sync.Value.Region, sync.Value.Sync);
+	                }
+	                else
+	                {
+//	                    ApplyParallel(tpa, n0, g.Union(mp).ToArray(), sync.Value.Region, sync.Value.Sync);
+	                }
+				 }
+			}
+		}
 	}
+	
+	Collection<Node> MoreParallels(TPA tpa, Collection<Node> _region, Node[] parallels)
+    {//TODO: Look for Parallels
+        Collection<Node> res = new HashSet<Node>();
+        /*Boolean changed = true;
+        var region = UnionNodes(_region, parallels);
+        while (changed)
+        {
+            Collection<Node> npars = new Collection<Node>();
+            var ppars = UnionNodes(npars,parallels);
+            changed = false;
+            for(Node node)
+            
+            foreach (Node node in region.Where(r => !ppars.Contains(r) && !ppars.Any(p=>PMLogHelper.IsEquivalent(r,p))))
+            {
+                if (IsParallel(tpa, region, ppars.Union(new TPATemplate.Node[] {node}).ToArray()))
+                {
+                    res.Add(node);
+                    break;
+                }
+            }
+        }*/
+        return res;
+    }
 
-//	void GetParallelHypothesis(TPATemplate tpa, TPATemplate.Node n0)
-//    {
-//        var acc0 = GetParallelFollowingNodes(tpa, n0).ToArray();
-//        var region = GetParalleForwardAccesibleNodes(tpa, n0).ToArray();
-//        var grps = Grouper<TPATemplate.Node>.CreateGroups(acc0, (TPATemplate.Node[] g) => { return IsParallel(tpa, region, g); }).ToArray();
-//
-//        foreach (var g in grps.Where(x => x.Length > 1))
-//        {
-//            var sync = GetForwardSyncronizingNode(tpa, n0, g);
-//            if (sync != null)
-//            {
-//                var mp = MoreParallels(tpa, sync.Value.Region, g);// detec if there are more parallels on the region
-//                if (mp.Length == 0)
-//                {
-//                    ApplyParallel(tpa, n0, g, sync.Value.Region, sync.Value.Sync);
-//                }
-//                else
-//                {
-//                    ApplyParallel(tpa, n0, g.Union(mp).ToArray(), sync.Value.Region, sync.Value.Sync);
-//                }
-//            }
-//        }
-//
-//
-//    }
+	void ApplyParallel(TPA tpa, Node prev, Node[] parallels, Collection<Node> region, Node post)
+    {
+
+        /*var rests = SplitSequencesinsideParallel(tpa, region, parallels);
+        if (rests != null)
+        {
+            TPATemplate.Node[][] Sequences = rests.Values.Select(v => v.ToArray()).ToArray();
+            RemoveInterSplitTransitions(tpa, region, Sequences, parallels, post);
+            FuseParallelEquivalentNodes(tpa, region, parallels);
+            ForwardMerge(tpa, TransitionsMergeMode.Inline);
+            RemoveRepeatedTransitions(tpa);
+            RemoveParallelSelfloops(tpa, parallels);
+            //Creating transitions
+            tpa.AddNodeTransition(new Guid[] { prev.Id }, parallels.Select(p => p.Id).ToArray(), "");
+            prev.getOutTransitions(tpa).Where(nt => nt.EndNodes.Count == 1 && parallels.Select(p => p.Id).Contains(nt.EndNodes.First())).ToList()
+                .ForEach(nt => tpa.NodeTransitions.Remove(nt));
+            foreach (var fin in SequenceFinals(tpa, Sequences, post))
+            {
+                tpa.AddNodeTransition(fin.Select(p => p.Id).ToArray(), new Guid[] { post.Id }, "");
+                foreach (var pt in post.getInTransitions(tpa).Where(nt => nt.SourceNodes.Count == 1))
+                {
+                    if (fin.Select(f => f.Id).Contains(pt.SourceNodes.First()))
+                    {
+                        tpa.NodeTransitions.Remove(pt);
+                    }
+                }
+
+
+            }
+
+
+        }
+        else
+        {
+            //remove the region
+            foreach (var n in region)
+            {
+                CutsHelper.DeleteNode(tpa, n);
+            }
+            foreach (var n in parallels)
+            {
+                CutsHelper.DeleteNode(tpa, n);
+            }
+            //recreate the region
+            tpa.Nodes.AddRange(parallels);
+            tpa.NodeTransitions.Add(new TPATemplate.NodeTransition()
+            {
+                SourceNodes = new List<Guid>() { prev.Id },
+                EndNodes = parallels.Select(p => p.Id).ToList(),
+                Expression = ""
+            });
+            tpa.NodeTransitions.Add(new TPATemplate.NodeTransition()
+            {
+                EndNodes = new List<Guid>() { post.Id },
+                SourceNodes = parallels.Select(p => p.Id).ToList(),
+                Expression = ""
+            });
+        }*/
+
+    }
+
+	
+
+	
+	class SyncNode{
+		public Node Sync;
+		public Collection<Node> Region;
+		
+		public SyncNode(Node s, Collection<Node> reg) {
+			Sync =s;
+			Region = reg;
+		}
+		
+	}
+	
+	public SyncNode GetForwardSyncronizingNode(TPA tpa, Node prev, Node[] hypo) {
+		
+		Collection<Node> region = new HashSet<Node>();
+		for(var h:hypo) { region.add(h);}
+		int level =0;
+		do {
+			level++;
+			Collection<Collection<Node>> h = new HashSet<Collection<Node>>();
+			for(var h0:hypo) {
+				h.add(GetParallelFollowingNodes(tpa,h0,level));
+			}
+			var sy = GetSyncrofromFollowingNodes(tpa, prev, hypo, h);
+            if (sy != null)
+            {
+                return sy;
+            }
+			
+		}while(level<50);//TODO: ElegantWay
+		
+		return null;
+		
+	}
+	
+	private Collection<Node> GetParallelFollowingNodes(TPA tpa,Node n0, int level) {
+		Collection<Node> res = new HashSet<Node>(GetParallelFollowingNodes(tpa, n0));
+		if (level == 1) return res;
+		for(var v : res.stream().toList()) {
+			for(var nx:GetParallelFollowingNodes(tpa,v,level-1)) {
+				res.add(nx);
+			}
+		}
+		return res;
+	}
+	
+	private SyncNode GetSyncrofromFollowingNodes(TPA tpa, Node prev, Node[] hypo, Collection<Collection<Node>> n) {
+		
+		Collection<Node> res = null;
+		
+		for(var h :n) {
+			Collection<Node> SX = new HashSet<Node>();
+			for (var x :h) {
+				Boolean all=true;
+				for (var y :hypo) {
+					if (Utils.IsEquivalent(x, y)) {
+						all = false;
+					}
+				}
+				if (all) SX.add(x);
+			}
+			if (res == null) {
+				res = new HashSet<Node>();
+				res.addAll(SX);
+			}
+			else {
+			
+				Collection<Node> SY = new HashSet<Node>();
+				for(var x : res) {
+					Boolean any = false;
+					for (var y : SX) {
+						if (x==y) {
+							any=true;
+						}
+					}
+					if (any) {
+						SY.add(x);
+					}
+						
+				}
+				res = SY;
+			}
+			
+		}
+		
+		for (var r:res) {
+			var region = GetIsolatedParallelRegion(tpa, prev, hypo, r);
+			 if (region!=null)
+             {
+                 return new SyncNode(r, region);
+             }
+		}
+		
+		return null;
+		
+	}
+	
+	Collection<Node> GetIsolatedParallelRegion(TPA tpa, Node prev, Node[] parallels, Node post){
+		Collection<Node> region = new HashSet<Node>();
+		for(var node :parallels) {
+		 region = UnionNodes(region,CutsHelper.GetForwardedNodesBetween2Nodes(tpa, node, post));
+		}
+		 var middleregion = region.stream().filter(x->x.getId()!=post.getId()).collect(Collectors.toSet());
+		 var prevregion = CutsHelper.GetBackwardedGroup(tpa, prev, tpa.getNodes());
+         var postregion = CutsHelper.GetForwardedGroup(tpa, post, tpa.getNodes());
+         var iprev = IntersectNodes(middleregion, prevregion);
+         var ipost = IntersectNodes(middleregion, postregion); 
+         if (iprev.size() == 0 && ipost.size() == 0)
+         {
+             return middleregion;
+         }
+		return null;
+		
+	}
+	
+	/*
+	 * TPATemplate.Node[] GetIsolatedParallelRegion(TPATemplate tpa, TPATemplate.Node prev, TPATemplate.Node[] parallels, TPATemplate.Node post)
+        {
+            //Compute region in the middle
+            List<TPATemplate.Node> region = new List<TPATemplate.Node>();
+            foreach (TPATemplate.Node node in parallels)
+            {
+                region = region.Union(CutsHelper.GetForwardedNodesBetween2Nodes(tpa, node, post)).ToList();
+            }
+            var middleregion = region.Except(new TPATemplate.Node[] { post }).ToList();
+
+            var prevregion = CutsHelper.GetBackwardedGroup(tpa, prev, tpa.Nodes.ToArray());
+            var postregion = CutsHelper.GetForwardedGroup(tpa, post, tpa.Nodes.ToArray());
+            var iprev = middleregion.Intersect(prevregion).ToList();
+            var ipost = middleregion.Intersect(postregion).ToList();
+            if (iprev.Count == 0 && ipost.Count == 0)
+            {
+                return middleregion.ToArray();
+            }
+            return null;
+        }
+
+	 */
+	
+
+
+	
+	
+	private Collection<Node[]> CreateParallelGroups(TPA tpa, Collection<Node> nodes,Collection<Node> region)
+	{
+		Collection<Node[]> res = new HashSet<Node[]>();
+		for(var n0 :nodes) {
+			res.add(new Node[] {n0});
+		}
+		Boolean changed = true;
+		while(changed) {
+			changed=false;
+			int i0 = res.size();
+			res = GroupFusion(tpa,region,res);
+			if (i0!=res.size()) {
+				changed=true;
+			}
+		}
+
+		return res;
+	}
+	
+	private Collection<Node[]> GroupFusion(TPA tpa,Collection<Node> region,Collection<Node[]> groups){
+		
+		Collection<Node[]> res = new HashSet<Node[]>(groups);
+		for(var i0 :groups) {
+			for(var i1:groups) {
+				if (i0!=i1 && res.contains(i0) && res.contains(i1)) {
+					var ix = UnionNodes(i1, i0);
+					if (IsParallel(tpa, region, ix)) {
+						res.remove(i0);
+						res.remove(i1);
+						res.add(ix.toArray(new Node[ix.size()]));
+					}
+							
+				}
+			}
+		}
+		
+		return res;
+		
+	}
+	
+	
+	private Collection<Node> UnionNodes(Node[] n0, Node[] n1) {
+		Collection<Node> res = new HashSet<Node>();
+		for(var n : n0) {res.add(n);}
+		for(var n : n1) {res.add(n);}
+		return res;
+	}
+	
+	private Collection<Node> UnionNodes(Collection<Node> n0, Collection<Node> n1) {
+		Collection<Node> res = new HashSet<Node>();
+		for(var n : n0) {res.add(n);}
+		for(var n : n1) {res.add(n);}
+		return res;
+	}
+	
+	private Collection<Node> IntersectNodes(Collection<Node> n0, Collection<Node> n1) {
+		Collection<Node> res = new HashSet<Node>();
+		for(var n : n0) {
+			if (n1.contains(n)) {
+				res.add(n);
+			}
+		}
+		return res;
+	}
+	
 	private boolean IsParallel(TPA tpa, Collection<Node> region, Collection<Node> g) {
 		switch (ParallelIdentificationPolicy) {
 		case Inductive:
