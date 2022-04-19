@@ -103,6 +103,16 @@ public class test {
 		return getLogfromString(res);
 	}
 	
+	public static XLog getLog3() {
+		String res = "A X X1 Y Z Y1 Z1 D H\n"
+				+ "A X Z Y X1 Y1 Z1 D H\n"
+				+ "A Y Y1 Z Z1 X X1 D H\n"
+				+ "A Y X Y1 X1 Z Z1 D H\n"
+				+ "A Z Z1 X Y X1 Y1 D H\n"
+				+ "A Z Y Z1 Y1 X X1 D H";
+		return getLogfromString(res);
+	}
+	
 	public static XLog getLogfromString(String s) 
 	{
 		XLog log = factory.createLog();

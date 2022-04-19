@@ -27,8 +27,12 @@ public class ConcurrentNodesHelper {
 		// Discover if Each pair (A,B) is Fully Accessible
 		for (Entry<Node, Collection<Node>> n0 : equivalents.entrySet().stream().filter(e -> nodes.contains(e.getKey())).toList()) {
 			for (Entry<Node, Collection<Node>> n1 : equivalents.entrySet().stream().filter(e -> nodes.contains(e.getKey())).toList()) {
+				
+				
+				
 				if (
 					(!n0.getKey().equals(n1.getKey())) &&
+					//(!n0.Value.Where(n0i => n1.Value.Any(n1i => IsAccessible(t, n0i, n1i, false))).Any())
 					(!n0.getValue().stream().filter(n0i -> n1.getValue().stream().anyMatch(n1i -> IsAccessible(n0i, n1i, false))).findAny().isPresent())
 				) {
 					// Exist A->B not accessible
@@ -43,6 +47,8 @@ public class ConcurrentNodesHelper {
 		}
 		return true;
 	}
+	
+	
 	
 	public static Map<Node, Collection<Node>> GetEquivalent(TPA t, Collection<Node> nodes) {
 		Map<Node, Collection<Node>> res = new HashMap<>();
@@ -66,12 +72,30 @@ public class ConcurrentNodesHelper {
 		if (backward) {
 			res = GetBackwardTransitions(n0).stream().map(nt -> nt.getEndNodes()).findFirst().get();
 		} else {
-			res = GetForwardTransitions(n0).stream().map(nt -> nt.getEndNodes()).findFirst().get();
+			//res = GetForwardTransitions(n0).stream().map(nt -> nt.getEndNodes()).findFirst().get();
+			return  GetForwardNodes(n0);
 		}
 		return res;
 	}
 	
-	public static Collection<Transition> GetBackwardTransitions(Node n0) {
+	
+	public static Collection<Node> GetBackwardNodes(Node n0){
+		Set<Node> res = new HashSet<>();
+		for (var nt :GetBackwardTransitions(n0)) {
+			res.add(nt.getSourceNodes().stream().findFirst().get());
+		}
+		return res;
+	}
+	
+	public static Collection<Node> GetForwardNodes(Node n0){
+		Set<Node> res = new HashSet<>();
+		for (var nt :GetForwardTransitions(n0)) {
+			res.add(nt.getEndNodes().stream().findFirst().get());
+		}
+		return res;
+	}
+	
+	/*public static Collection<Transition> GetBackwardTransitions(Node n0) {
 		Set<Transition> res = new HashSet<>();
 		Set<Transition> transitions = new HashSet<>();
 		transitions.addAll(n0.getInTransitions());
@@ -84,9 +108,9 @@ public class ConcurrentNodesHelper {
 			transitions.remove(t);
 		}
 		return res;
-	}
+	}*/
 	
-	public static Collection<Transition> GetForwardTransitions(Node n0) {
+	/*public static Collection<Transition> GetForwardTransitions(Node n0) {
 		Set<Transition> res = new HashSet<>();
 		Set<Transition> transitions = new HashSet<>();
 		transitions.addAll(n0.getOutTransitions());
@@ -99,5 +123,42 @@ public class ConcurrentNodesHelper {
 			transitions.remove(t);
 		}
 		return res;
+	}*/
+	
+	
+	public static Collection<Transition> GetBackwardTransitions(Node n0) {
+		Set<Transition> res = new HashSet<>();
+		Set<Transition> transitions = new HashSet<>();
+		transitions.addAll(n0.getInTransitions());
+		while (transitions.size() > 0) {
+			Transition t = transitions.iterator().next();
+			if (!res.contains(t)) {
+				res.add(t);
+				Node nf = t.getSourceNodes().iterator().next();
+				transitions.addAll(nf.getInTransitions());
+			}
+			transitions.remove(t);
+		}
+		
+		return res;
 	}
+	
+	public static Collection<Transition> GetForwardTransitions( Node n0) {
+		Set<Transition> res = new HashSet<>();
+		Set<Transition> transitions = new HashSet<>();
+		transitions.addAll(n0.getOutTransitions());
+		while (transitions.size() > 0) {
+			Transition t = transitions.iterator().next();
+			if (!res.contains(t)) {
+				res.add(t);
+				Node nf = t.getEndNodes().iterator().next();
+				transitions.addAll(nf.getOutTransitions());
+			}
+			transitions.remove(t);
+		}
+		
+		return res;
+	}
+	
+	
 }

@@ -62,6 +62,15 @@ public class CutsHelper {
      }
 	 
 
+	 public static Collection<Node> GetBackwardedNodes(TPA t, Node n0)
+     {
+		 return GetBackwardedGroup(t, n0, t.getNodes());
+     }
+	 
+	 public static Collection<Node> GetForwardesNodes(TPA t, Node n0)
+     {
+		 return GetForwardedGroup(t, n0, t.getNodes());
+     }
 
 	 
 	 public static Collection<Node> GetBackwardedGroup(TPA t, Node n0, Collection<Node> Region)
