@@ -13,29 +13,27 @@ public class Transition {
 	@Getter
 	@EqualsAndHashCode.Include
 	private UUID id;
-	private TPA owner;
 	@Getter
 	private Set<Node> sourceNodes;
 	@Getter
 	private Set<Node> endNodes;
-	
+
 	public Transition(TPA owner) {
 		this.id = UUID.randomUUID();
-		this.owner = owner;
 		this.sourceNodes = new HashSet<>();
 		this.endNodes = new HashSet<>();
-		
+
 		owner.registerTransition(this);
 	}
-	
+
 	public boolean isParallel() {
 		return sourceNodes.size() > 1 || endNodes.size() > 1;
 	}
-	
+
 	@Override
 	public String toString() {
 		String source = String.join(", ", getSourceNodes().stream().map(n -> n.getName()).sorted().toList());
 		String target = String.join(", ", getEndNodes().stream().map(n -> n.getName()).sorted().toList());
-		return "[" + source + "] => [" + target  + "]";
+		return "[" + source + "] => [" + target + "]";
 	}
 }

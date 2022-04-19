@@ -6,19 +6,14 @@ import palia.model.Node;
 
 public class PaliaGrouper {
 
-	private Boolean IsNodeGroup(Node[] grouping) 
-	{
-		
-		
-		return null;
-		
-	}
-	
-	public static Collection<Node[]> CreateGroups(Collection<Node> g)
-	{
+	private Boolean IsNodeGroup(Node[] grouping) {
 		return null;
 	}
-	
+
+	public static Collection<Node[]> CreateGroups(Collection<Node> g) {
+		return null;
+	}
+
 //	public static IEnumerable<T[]> CreateGroups(IEnumerable<T> g ,Func<T[], bool> isgroupfunction)
 //    {
 //        List<T[]> res = g.Select(x=>new T[]{x}).ToList();
