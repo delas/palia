@@ -1,11 +1,12 @@
 package palia;
 
 import java.io.File;
-import java.io.IOException;
 
 import org.deckfour.xes.extension.std.XConceptExtension;
 import org.deckfour.xes.factory.XFactory;
 import org.deckfour.xes.factory.XFactoryNaiveImpl;
+import org.deckfour.xes.in.XParser;
+import org.deckfour.xes.in.XesXmlGZIPParser;
 import org.deckfour.xes.model.XEvent;
 import org.deckfour.xes.model.XLog;
 import org.deckfour.xes.model.XTrace;
@@ -20,7 +21,7 @@ public class test {
 
 	private static XFactory factory = new XFactoryNaiveImpl();
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws Exception {
 		GraphExporter.exportSVG(mine(), new File("output/out.svg"));
 		System.out.println("done");
 	}
@@ -58,6 +59,13 @@ public class test {
 		t7.addSource(G, H).addEnd(I);
 
 		return tpa;
+	}
+
+	public static TPA mine(String filename) throws Exception {
+		Palia p = new Palia();
+		XParser parser = new XesXmlGZIPParser();
+		XLog log = parser.parse(new File(filename)).get(0);
+		return p.mine(log);
 	}
 
 	public static TPA mine() {
