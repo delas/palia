@@ -62,7 +62,7 @@ public class test {
 
 	public static TPA mine() {
 		Palia p = new Palia();
-		return p.mine(getLog2());
+		return p.mine(getLog4());
 	}
 
 	public static XLog getLog() {
@@ -127,15 +127,33 @@ public class test {
 		return getLogfromString(res);
 	}
 
+	public static XLog getLog4() {
+		String res = "A C B D G\n" + "A B C D G\n" + "A E F T D H\n" + "A E F T E F T E F T D H\n" + "A W W W A\n"
+				+ "A J E F T J A\n" + "A X X1 Y Z Y1 Z1 D H\n" + "A X Z Y X1 Y1 Z1 D H\n" + "A Y Y1 Z Z1 X X1 D H\n"
+				+ "A Y X Y1 X1 Z Z1 D H\n" + "A Z Z1 X Y X1 Y1 D H\n" + "A Z Y Z1 Y1 X X1 D H";
+		return getLogfromString(res);
+	}
+
+	public static XLog getLog5() {
+		String res = "A X X1 Y Z X2 Y1 Y2 Z1 Z2A Z3 D H\n" + "A X Z Y X1 Y1 X2 Y2 Z1 Z2B Z3 D H\n"
+				+ "A Y Y1 Z Y2 Z1 X Z2A X1 X2 Z3 D H\n" + "A Y X Y1 X1 Y2 Z Z1 X2 Z2B Z3 D H\n"
+				+ "A Z Z1 Z2B X Y X1 Z3 Y1 X2 Y2 D H\n" + "A Z Y Z1 Z2A Y1 Y2 Z3 X X1 X2 D H\n"
+				+ "A Z Z1 Z2B Z3 Y Y1 Y2 X X1 X2 D H\n" + "A Y Y1 Y2 Z Z1 Z2A Z3 X X1 X2 D H\n"
+				+ "A X X1 X2 Y Y1 Y2 Z Z1 Z2B Z3 D H";
+		return getLogfromString(res);
+	}
+
 	public static XLog getLogfromString(String s) {
 		XLog log = factory.createLog();
 		String[] st = s.split("\n");
 		for (String tline : st) {
 			XTrace trc = factory.createTrace();
+			// trc.add(createEvent("Start"));
 			String[] token = tline.split(" ");
 			for (String t : token) {
 				trc.add(createEvent(t));
 			}
+			// trc.add(createEvent("End"));
 			log.add(trc);
 		}
 

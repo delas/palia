@@ -3,6 +3,7 @@ package palia.algorithm;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -38,12 +39,7 @@ public class Palia {
 
 		TransitionsMergeMode transmode = TransitionsMergeMode.Inline;
 
-		int nodesnumber = Integer.MAX_VALUE;
-		while (nodesnumber > res.getNodes().size()) {
-			nodesnumber = res.getNodes().size();
-			res = BackwardMerge(res, transmode);
-			res = ForwardMerge(res, transmode);
-		}
+		MineOnwardMerge(res, transmode);
 
 		res = ParallelForwardMerge(res);
 
@@ -56,6 +52,16 @@ public class Palia {
 //		}
 
 		return res;
+	}
+
+	private TPA MineOnwardMerge(TPA tpa, TransitionsMergeMode mode) {
+		int nodesnumber = Integer.MAX_VALUE;
+		while (nodesnumber > tpa.getNodes().size()) {
+			nodesnumber = tpa.getNodes().size();
+			tpa = BackwardMerge(tpa, mode);
+			tpa = ForwardMerge(tpa, mode);
+		}
+		return tpa;
 	}
 
 	private TPA SimpleAcceptorTree(XLog log) {
@@ -354,7 +360,8 @@ public class Palia {
 		Collection<Node> res = new ArrayList<Node>();
 		for (var s0 : tpa.getStartingNodes()) {
 			res.add(s0);
-			Collection<Node> all = GetParalleForwardAccesibleNodes(tpa, s0);
+			// Collection<Node> all = GetParalleForwardAccesibleNodes(tpa, s0);
+			Collection<Node> all = ConcurrentNodesHelper.GetForwardNodes(s0);
 			for (var a : all) {
 				if (!res.contains(a))
 					res.add(a);
@@ -424,27 +431,44 @@ public class Palia {
 		if (rests != null) {
 			Collection<Collection<Node>> Sequences = rests.values(); // Values.Select(v => v.ToArray()).ToArray();
 			RemoveInterSplitTransitions(tpa, region, Sequences, parallels, post);
-			// FuseParallelEquivalentNodes(tpa, region, parallels);
-			/*
-			 * ForwardMerge(tpa, TransitionsMergeMode.Inline);
-			 * RemoveRepeatedTransitions(tpa); RemoveParallelSelfloops(tpa, parallels);
-			 */
-			// Creating transitions
-			/*
-			 * tpa.AddNodeTransition(new Guid[] { prev.Id }, parallels.Select(p =>
-			 * p.Id).ToArray(), ""); prev.getOutTransitions(tpa).Where(nt =>
-			 * nt.EndNodes.Count == 1 && parallels.Select(p =>
-			 * p.Id).Contains(nt.EndNodes.First())).ToList() .ForEach(nt =>
-			 * tpa.NodeTransitions.Remove(nt)); foreach (var fin in SequenceFinals(tpa,
-			 * Sequences, post)) { tpa.AddNodeTransition(fin.Select(p => p.Id).ToArray(),
-			 * new Guid[] { post.Id }, ""); foreach (var pt in
-			 * post.getInTransitions(tpa).Where(nt => nt.SourceNodes.Count == 1)) { if
-			 * (fin.Select(f => f.Id).Contains(pt.SourceNodes.First())) {
-			 * tpa.NodeTransitions.Remove(pt); } }
-			 * 
-			 * 
-			 * }
-			 */
+			RemoveRepeatedTransitions(tpa);
+			FuseParallelEquivalentNodes(tpa, region, parallels);
+			RemoveRepeatedTransitions(tpa);
+			MineOnwardMerge(tpa, TransitionsMergeMode.Inline);
+			RemoveRepeatedTransitions(tpa);
+			RemoveParallelSelfloops(tpa, parallels);
+			Transition tpre = new Transition(tpa);
+			tpre.getSourceNodes().add(prev);
+			tpre.getEndNodes().addAll(parallels);
+
+			// prev.getOutTransitions().Where(nt => nt.EndNodes.Count == 1 &&
+			// parallels.Select(p => p.Id).Contains(nt.EndNodes.First())).ToList()
+			// .ForEach(nt => tpa.NodeTransitions.Remove(nt));
+			for (var trx : prev.getOutTransitions().stream().filter(nt -> nt.getEndNodes().size() == 1
+					&& parallels.contains(nt.getEndNodes().stream().findFirst().get())).toList()) {
+				tpa.getTransitions().remove(trx);
+			}
+
+			for (var fin : SequenceFinals(tpa, Sequences, post)) {
+
+				// tpa.AddNodeTransition(fin.Select(p => p.Id).ToArray(), new Guid[] { post.Id
+				// }, "");
+				Transition tx = new Transition(tpa);
+				tx.getSourceNodes().addAll(fin);
+				tx.getEndNodes().add(post);
+
+				// foreach (var pt in post.getInTransitions(tpa).Where(nt =>
+				// nt.SourceNodes.Count == 1)) { if (fin.Select(f =>
+				// f.Id).Contains(pt.SourceNodes.First())) { tpa.NodeTransitions.Remove(pt); } }
+
+				for (var pt : post.getInTransitions()) {
+					if (pt.getSourceNodes().size() == 1
+							&& fin.contains(pt.getSourceNodes().stream().findFirst().get())) {
+						tpa.getTransitions().remove(pt);
+					}
+				}
+
+			}
 
 		} else {
 			// remove the region
@@ -469,10 +493,75 @@ public class Palia {
 
 	}
 
+	void RemoveParallelSelfloops(TPA tpa, Collection<Node> parallels) {
+		for (var p : parallels) {
+			// p.getOutTransitions(tpa).Where(nt => nt.EndNodes.Count == 1 &&
+			// nt.EndNodes.First() == p.Id).ToList().ForEach(nt =>
+			// tpa.NodeTransitions.Remove(nt));
+			for (var loop : p.getOutTransitions().stream()
+					.filter(nt -> nt.getEndNodes().size() == 1 && nt.getEndNodes().stream().findFirst().get() == p)
+					.toList()) {
+				tpa.getTransitions().remove(loop);
+			}
+		}
+	}
+
+	List<List<Node>> SequenceFinals(TPA tpa, Collection<Collection<Node>> Sequences, Node post) {
+		List<List<Node>> finals = new ArrayList<List<Node>>();
+		for (Collection<Node> seq : Sequences) {
+			// var x0 = post.getInTransitions()
+			// .Where(nt => nt.SourceNodes.Count == 1).Select(nt =>
+			// nt.getSourceNodes(tpa).First())
+			// .Where(n => seq.Contains(n)).ToArray();
+			List<Node> x0 = post.getInTransitions().stream().filter(nt -> nt.getSourceNodes().size() == 1)
+					.map(nt -> nt.getSourceNodes().stream().findFirst().get()).filter(n -> seq.contains(n)).toList();
+
+			finals.add(x0);
+
+		}
+		// var res = new List<Collection<Node>>();
+		// var res = CartesianProduct<TPATemplate.Node>(finals).Select(x =>
+		// x.ToArray()).ToArray();
+
+		List<List<Node>> res = cartesianProduct(finals);
+		return res;
+
+	}
+
+	public static <T> List<List<T>> cartesianProduct(List<List<T>> lists) {
+		// check if incoming data is not null
+		if (lists == null)
+			return Collections.emptyList();
+		// Cartesian product, intermediate result
+		List<List<T>> cp = Collections.singletonList(Collections.emptyList());
+		// iterate through incoming lists
+		for (List<T> list : lists) {
+			// non-null and non-empty lists
+			if (list == null || list.size() == 0)
+				continue;
+			// intermediate result for next iteration
+			List<List<T>> next = new ArrayList<>();
+			// rows of current intermediate result
+			for (List<T> row : cp) {
+				// elements of current list
+				for (T el : list) {
+					// new row for next intermediate result
+					List<T> nRow = new ArrayList<>(row);
+					nRow.add(el);
+					next.add(nRow);
+				}
+			}
+			// pass to next iteration
+			cp = next;
+		}
+		// Cartesian product, final result
+		return cp;
+	}
+
 	HashMap<Node, Collection<Node>> SplitSequencesinsideParallel(TPA tpa, Collection<Node> region,
 			Collection<Node> parallels) {
 
-		Collection<Node> regionrests = new HashSet();
+		Collection<Node> regionrests = new ArrayList();
 
 		for (var r : region) {
 			if (!parallels.stream().anyMatch(h -> Utils.IsEquivalent(h, r))) {
@@ -484,13 +573,13 @@ public class Palia {
 			// var dict = parallels.ToDictionary(p => p, p => new List<TPATemplate.Node>() {
 			// p });
 			for (var p : parallels) {
-				dict.put(p, new HashSet<Node>() {
+				dict.put(p, new ArrayList<Node>() {
 				});
 				dict.get(p).add(p);
 			}
 			for (var rr : regionrests) {
 				for (var p : parallels) {
-					Collection<Node> np = new HashSet();
+					Collection<Node> np = new ArrayList();
 					np.add(p);
 					np.add(rr);
 					if (!IsParallel(tpa, region, np)) {
@@ -506,9 +595,22 @@ public class Palia {
 		return null;
 	}
 
+	void FuseParallelEquivalentNodes(TPA tpa, Collection<Node> region, Collection<Node> parallels) {
+		for (var p : parallels) {
+			// var eq = region.Where(r => PMLogHelper.IsEquivalent(r, p)).Except(new
+			// TPATemplate.Node[] { p }).ToArray();
+			var eq = region.stream().filter(r -> Utils.IsEquivalent(r, p)).toList();
+			for (var e : eq) {
+				if (!parallels.contains(e)) {
+					FuseNodes(tpa, p, e);
+				}
+			}
+		}
+	}
+
 	void RemoveInterSplitTransitions(TPA tpa, Collection<Node> region, Collection<Collection<Node>> Sequences,
 			Collection<Node> parallels, Node post) {
-		Set<Transition> res = new HashSet<Transition>();
+		Collection<Transition> res = new ArrayList<Transition>();
 		for (Collection<Node> s0 : Sequences) {
 			for (Collection<Node> s1 : Sequences) {
 				if (s0 != s1) {
@@ -525,10 +627,10 @@ public class Palia {
 
 	Collection<Transition> GetInterSplitTransitions(TPA tpa, Collection<Node> region, Collection<Node> _s0,
 			Collection<Node> _s1, Collection<Node> parallels, Node post) {
-		Set<Transition> res = new HashSet<Transition>();
+		Collection<Transition> res = new ArrayList<Transition>();
 		// var s = region.Where(x => _s0.Any(y => PMLogHelper.IsEquivalent(x,
 		// y))).Union(_s0).ToArray();
-		Collection<Node> s0 = new HashSet(_s0);
+		Collection<Node> s0 = new ArrayList(_s0);
 		for (var x : region) {
 			if (_s0.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
 				s0.add(x);
@@ -536,7 +638,7 @@ public class Palia {
 		}
 		// var s1 = region.Where(x => _s1.Any(y => PMLogHelper.IsEquivalent(x,
 		// y))).Union(_s1).ToArray();
-		Collection<Node> s1 = new HashSet(_s1);
+		Collection<Node> s1 = new ArrayList(_s1);
 		for (var x : region) {
 			if (_s1.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
 				s1.add(x);
@@ -552,8 +654,9 @@ public class Palia {
 					// var db = GetForwardNodes(tpa, n1).ToArray();
 					// var fn = GetForwardNodes(tpa, n1).Where(n => s0.Any(nx =>
 					// PMLogHelper.IsEquivalent(n, nx))).ToArray();
-					Collection<Node> fn = new HashSet();
-					for (var x : CutsHelper.GetForwardesNodes(tpa, n1)) {
+					var db = ConcurrentNodesHelper.GetForwardNodes(n1);
+					Collection<Node> fn = new ArrayList();
+					for (var x : ConcurrentNodesHelper.GetForwardNodes(n1)) {
 						if (s0.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
 							fn.add(x);
 						}
@@ -578,8 +681,8 @@ public class Palia {
 						// Analyze *->N0->N1
 						// var bn = GetBackwardNodes(tpa, n0).Where(n => s1.Any(nx =>
 						// PMLogHelper.IsEquivalent(n, nx))).ToArray();
-						Collection<Node> bn = new HashSet();
-						for (var x : CutsHelper.GetBackwardedNodes(tpa, n0)) {
+						Collection<Node> bn = new ArrayList();
+						for (var x : ConcurrentNodesHelper.GetBackwardNodes(n0)) {
 							if (s1.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
 								bn.add(x);
 							}

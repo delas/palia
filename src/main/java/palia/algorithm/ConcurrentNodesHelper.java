@@ -1,5 +1,6 @@
 package palia.algorithm;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -7,7 +8,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 
 import palia.model.Node;
 import palia.model.TPA;
@@ -69,7 +69,7 @@ public class ConcurrentNodesHelper {
 	}
 
 	public static Collection<Node> GetAccesibleNodes(Node n0, boolean backward) {
-		Set<Node> res = new HashSet<>();
+		Collection<Node> res = new ArrayList<>();
 		if (backward) {
 			res = GetBackwardTransitions(n0).stream().map(nt -> nt.getEndNodes()).findFirst().get();
 		} else {
@@ -81,7 +81,7 @@ public class ConcurrentNodesHelper {
 	}
 
 	public static Collection<Node> GetBackwardNodes(Node n0) {
-		Set<Node> res = new HashSet<>();
+		Collection<Node> res = new ArrayList<Node>();
 		for (var nt : GetBackwardTransitions(n0)) {
 			res.add(nt.getSourceNodes().stream().findFirst().get());
 		}
@@ -89,7 +89,7 @@ public class ConcurrentNodesHelper {
 	}
 
 	public static Collection<Node> GetForwardNodes(Node n0) {
-		Set<Node> res = new HashSet<>();
+		Collection<Node> res = new ArrayList<Node>();
 		for (var nt : GetForwardTransitions(n0)) {
 			res.add(nt.getEndNodes().stream().findFirst().get());
 		}
@@ -117,8 +117,8 @@ public class ConcurrentNodesHelper {
 	 */
 
 	public static Collection<Transition> GetBackwardTransitions(Node n0) {
-		Set<Transition> res = new HashSet<>();
-		Set<Transition> transitions = new HashSet<>();
+		Collection<Transition> res = new ArrayList<>();
+		Collection<Transition> transitions = new ArrayList<>();
 		transitions.addAll(n0.getInTransitions());
 		while (transitions.size() > 0) {
 			Transition t = transitions.iterator().next();
@@ -134,8 +134,8 @@ public class ConcurrentNodesHelper {
 	}
 
 	public static Collection<Transition> GetForwardTransitions(Node n0) {
-		Set<Transition> res = new HashSet<>();
-		Set<Transition> transitions = new HashSet<>();
+		Collection<Transition> res = new ArrayList<>();
+		Collection<Transition> transitions = new ArrayList<>();
 		transitions.addAll(n0.getOutTransitions());
 		while (transitions.size() > 0) {
 			Transition t = transitions.iterator().next();
