@@ -25,6 +25,41 @@ public class test {
 		System.out.println("done");
 	}
 
+	public static TPA getTPA() {
+		TPA tpa = new TPA();
+
+		Node A = new Node(tpa, "A");
+		Node B = new Node(tpa, "B");
+		Node C = new Node(tpa, "C");
+		Node D = new Node(tpa, "D");
+		Node E = new Node(tpa, "E");
+		Node F = new Node(tpa, "F");
+		Node G = new Node(tpa, "G");
+		Node H = new Node(tpa, "H");
+		Node I = new Node(tpa, "I");
+
+		A.setStartingNode(true);
+		I.setFinalNode(true);
+
+		Transition t1 = new Transition(tpa);
+		Transition t2 = new Transition(tpa);
+		Transition t3 = new Transition(tpa);
+		Transition t4 = new Transition(tpa);
+		Transition t5 = new Transition(tpa);
+		Transition t6 = new Transition(tpa);
+		Transition t7 = new Transition(tpa);
+
+		t1.addSource(A).addEnd(B);
+		t2.addSource(A).addEnd(C);
+		t3.addSource(B).addEnd(D);
+		t4.addSource(C).addEnd(D);
+		t5.addSource(D).addEnd(E, F);
+		t6.addSource(E, F).addEnd(G, H);
+		t7.addSource(G, H).addEnd(I);
+
+		return tpa;
+	}
+
 	public static TPA mine() {
 		Palia p = new Palia();
 		return p.mine(getLog2());

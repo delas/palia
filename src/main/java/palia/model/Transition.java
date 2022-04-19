@@ -30,6 +30,20 @@ public class Transition {
 		return sourceNodes.size() > 1 || endNodes.size() > 1;
 	}
 
+	public Transition addSource(Node... n) {
+		for (Node ni : n) {
+			sourceNodes.add(ni);
+		}
+		return this;
+	}
+
+	public Transition addEnd(Node... n) {
+		for (Node ni : n) {
+			endNodes.add(ni);
+		}
+		return this;
+	}
+
 	@Override
 	public String toString() {
 		String source = String.join(", ", getSourceNodes().stream().map(n -> n.getName()).sorted().toList());
