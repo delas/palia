@@ -41,7 +41,7 @@ public class Palia {
 		FuseMilestones(res);
 
 		MineOnwardMerge(res, TransitionsMergeMode.Inline);
-		ShowTPA(res);
+		// ShowTPA(res);
 		res = ParallelForwardMerge(res);
 
 		res = MineOnwardMerge(res, TransitionsMergeMode.Equivalent);
