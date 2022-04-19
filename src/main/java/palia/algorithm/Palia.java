@@ -1,5 +1,7 @@
 package palia.algorithm;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,6 +19,7 @@ import org.deckfour.xes.model.XEvent;
 import org.deckfour.xes.model.XLog;
 import org.deckfour.xes.model.XTrace;
 
+import palia.graphviz.exporter.GraphExporter;
 import palia.model.Node;
 import palia.model.TPA;
 import palia.model.Transition;
@@ -24,7 +27,7 @@ import palia.utils.Utils;
 
 public class Palia {
 
-	public static List<String> MILESTONES = Arrays.asList("J");
+	public static List<String> MILESTONES = Arrays.asList("MM");
 	private ParallelIdentificationMode ParallelIdentificationPolicy = ParallelIdentificationMode.SplitConcurrence;
 
 	public TPA mine(XLog log) {
@@ -35,13 +38,13 @@ public class Palia {
 		FuseEndNodes(res);
 		// TODO: MIlestones is for Interactive Palia
 		// (Alert: This implementation said always J for milestone)
-		// FuseMilestones(res);
+		FuseMilestones(res);
 
-		TransitionsMergeMode transmode = TransitionsMergeMode.Inline;
-
-		MineOnwardMerge(res, transmode);
-
+		MineOnwardMerge(res, TransitionsMergeMode.Inline);
+		ShowTPA(res);
 		res = ParallelForwardMerge(res);
+
+		res = MineOnwardMerge(res, TransitionsMergeMode.Equivalent);
 
 //		if (transmode == TransitionsMergeMode.Equivalent) {
 //			while (nodesnumber > res.getNodes().size()) {
@@ -54,10 +57,22 @@ public class Palia {
 		return res;
 	}
 
+	void ShowTPA(TPA tpa) {
+
+		try {
+			GraphExporter.exportSVG(tpa, new File("output/out2.svg"));
+		} catch (IOException e) { // TODO Auto-generated catch
+									// block
+									// e.printStackTrace(); }
+		}
+	}
+
 	private TPA MineOnwardMerge(TPA tpa, TransitionsMergeMode mode) {
 		int nodesnumber = Integer.MAX_VALUE;
 		while (nodesnumber > tpa.getNodes().size()) {
 			nodesnumber = tpa.getNodes().size();
+			tpa = BackwardMerge(tpa, TransitionsMergeMode.Extrict);
+			tpa = ForwardMerge(tpa, TransitionsMergeMode.Extrict);
 			tpa = BackwardMerge(tpa, mode);
 			tpa = ForwardMerge(tpa, mode);
 		}
@@ -245,32 +260,34 @@ public class Palia {
 						subtrans = GetAccesibleTransitions(tpa, nt0, true);
 					}
 					for (Transition nt1 : subtrans) {
-						Node n0 = nt0.getSourceNodes().iterator().next();
-						Node n1 = nt1.getSourceNodes().iterator().next();
-						Node f0 = nt0.getEndNodes().iterator().next();
-						Node f1 = nt1.getEndNodes().iterator().next();
+						if (nt0 != nt1) {
+							Node n0 = nt0.getSourceNodes().iterator().next();
+							Node n1 = nt1.getSourceNodes().iterator().next();
+							Node f0 = nt0.getEndNodes().iterator().next();
+							Node f1 = nt1.getEndNodes().iterator().next();
 
-						switch (mode) {
-						case Extrict:
-							if (f0 != f1 && n0.getId().equals(n1.getId()) && Utils.IsEquivalent(f0, f1)) {
-								FuseNodes(tpa, f0, f1);
-								tpa.getTransitions().remove(nt1);
-								changed = true;
-							}
-							break;
-						case Inline:
-						case Equivalent:
-							if (f0 != f1 && Utils.IsEquivalent(f0, f1) && Utils.IsEquivalent(n0, n1)) {
-								FuseNodes(tpa, f0, f1);
-								if (n0 != n1) {
-									FuseNodes(tpa, n0, n1);
+							switch (mode) {
+							case Extrict:
+								if (f0 != f1 && n0.getId().equals(n1.getId()) && Utils.IsEquivalent(f0, f1)) {
+									FuseNodes(tpa, f0, f1);
+									tpa.getTransitions().remove(nt1);
+									changed = true;
 								}
-								tpa.getTransitions().remove(nt1);
-								changed = true;
+								break;
+							case Inline:
+							case Equivalent:
+								if (f0 != f1 && Utils.IsEquivalent(f0, f1) && Utils.IsEquivalent(n0, n1)) {
+									FuseNodes(tpa, f0, f1);
+									if (n0 != n1) {
+										FuseNodes(tpa, n0, n1);
+									}
+									tpa.getTransitions().remove(nt1);
+									changed = true;
+								}
+								break;
+							case None:
+								break;
 							}
-							break;
-						case None:
-							break;
 						}
 					}
 				}
@@ -956,6 +973,7 @@ public class Palia {
 	private Collection<Node> GetParallelFollowingNodes(TPA tpa, Node n0) {
 		Set<Node> res = new HashSet<>();
 		for (Transition nt : n0.getOutTransitions()) {
+			var nod = nt.getEndNodes();
 			res.addAll(nt.getEndNodes());
 		}
 		return res;
