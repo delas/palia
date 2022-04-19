@@ -27,7 +27,7 @@ public class test {
 	
 	public static TPA mine() {
 		Palia p = new Palia();
-		return p.mine(getLog1());
+		return p.mine(getLog2());
 	}
 	
 	public static XLog getLog() {
@@ -78,6 +78,16 @@ public class test {
 	
 	
 	public static XLog getLog1() {
+		String res = "A X Y Z D H\n"
+				+ "A X Z Y D H\n"
+				+ "A Y Z X D H\n"
+				+ "A Y X Z D H\n"
+				+ "A Z X Y D H\n"
+				+ "A Z Y X D H";
+		return getLogfromString(res);
+	}
+	
+	public static XLog getLog2() {
 		String res = "A C B D G\n"
 				+ "A B C D G\n"
 				+ "A E F T D H\n"
