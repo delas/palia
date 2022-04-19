@@ -3,6 +3,7 @@ package palia.algorithm;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -340,7 +341,10 @@ public class Palia {
 		//Set<Node> nodes = new HashSet<>(tpa.getNodes());
 		Collection<Node> nodes = GetForwardOrderedNodes(tpa);
 		for (Node n : nodes) {
-			GetParallelHypothesis(tpa, n);
+			if (tpa.getNodes().contains(n)) {
+				//As TPA is merging the nodes could be removed in iterations
+				GetParallelHypothesis(tpa, n);
+			}
 		}
 		return tpa;
 	}
@@ -371,11 +375,11 @@ public class Palia {
 					 var mp = MoreParallels(tpa, sync.Region, g);// detec if there are more parallels on the region
 	                if (mp.size() == 0)
 	                {
-//	                    ApplyParallel(tpa, n0, g, sync.Value.Region, sync.Value.Sync);
+	                    ApplyParallel(tpa, n0, Arrays.asList(g), sync.Region, sync.Sync);
 	                }
 	                else
 	                {
-//	                    ApplyParallel(tpa, n0, g.Union(mp).ToArray(), sync.Value.Region, sync.Value.Sync);
+	                	ApplyParallel(tpa, n0, UnionNodes(Arrays.asList(g), mp), sync.Region, sync.Sync);
 	                }
 				 }
 			}
@@ -406,11 +410,37 @@ public class Palia {
         return res;
     }
 
-	void ApplyParallel(TPA tpa, Node prev, Node[] parallels, Collection<Node> region, Node post)
+	void ApplyParallel(TPA tpa, Node prev, Collection<Node> parallels, Collection<Node> region, Node post)
     {
 
-        /*var rests = SplitSequencesinsideParallel(tpa, region, parallels);
+        var rests = SplitSequencesinsideParallel(tpa, region,parallels);
         if (rests != null)
+        {
+        
+        }
+        else {
+        	 //remove the region
+            for (var n : region)
+            {
+                CutsHelper.DeleteNode(tpa, n);
+            }
+            for (var n : parallels)
+            {
+                CutsHelper.DeleteNode(tpa, n);
+            }
+            //recreate the region
+            tpa.getNodes().addAll(parallels);
+            var st = new Transition(tpa);
+            st.getSourceNodes().add(prev);
+            st.getEndNodes().addAll(parallels);
+            tpa.getTransitions().add(st);
+            var ot = new Transition(tpa);
+            ot.getSourceNodes().addAll(parallels);
+            ot.getEndNodes().add(post);
+            tpa.getTransitions().add(ot);
+            
+        }
+        /*if (rests != null)
         {
             TPATemplate.Node[][] Sequences = rests.Values.Select(v => v.ToArray()).ToArray();
             RemoveInterSplitTransitions(tpa, region, Sequences, parallels, post);
@@ -466,6 +496,45 @@ public class Palia {
         }*/
 
     }
+
+	
+	 HashMap<Node, Collection<Node>> SplitSequencesinsideParallel(TPA tpa, Collection<Node> region, Collection<Node> parallels)
+     {
+		
+		 
+		 Collection<Node> regionrests = new HashSet();
+		 
+		 for (var r:region) {
+			 if (!parallels.stream().anyMatch(h->Utils.IsEquivalent(h, r))) {
+				 regionrests.add(r);
+			 }
+		 }
+		  if (regionrests.size() > 0){
+			  HashMap<Node, Collection<Node>> dict = new  HashMap<Node, Collection<Node>>();
+			  //var dict = parallels.ToDictionary(p => p, p => new List<TPATemplate.Node>() { p });
+			  for(var p:parallels) {
+				  dict.put(p, new HashSet<Node>() {});
+				  dict.get(p).add(p);
+			  }
+			  for(var rr :regionrests) {
+				  for(var p :parallels) {
+					  Collection<Node> np = new HashSet();
+					  np.add(p);
+					  np.add(rr);
+					  if (!IsParallel(tpa, region, np))
+	                     {
+	                         dict.get(p).add(rr);
+	                         break;
+	                     }
+				  }
+			  }
+			  return dict;
+			  
+		  }
+
+		 
+		 return null;
+     }
 
 	
 

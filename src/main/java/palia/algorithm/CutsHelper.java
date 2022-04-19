@@ -78,6 +78,19 @@ public class CutsHelper {
          return res;
      }
 	 
+	 public static void DeleteNode(TPA tpa, Node node)
+     {
+         var it = node.getInTransitions();
+         var ot = node.getOutTransitions();
+         node.getInTransitions().stream().forEach(nt -> tpa.getTransitions().remove(nt));
+         node.getOutTransitions().stream().forEach(nt -> tpa.getTransitions().remove(nt));
+         tpa.getNodes().remove(node);
+     }
+
+     public static void DeleteTransition(TPA tpa, Transition nt)
+     {
+         tpa.getTransitions().remove(nt);
+     }
 	
 	 
 
