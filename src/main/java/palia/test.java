@@ -29,34 +29,33 @@ public class test {
 	public static TPA getTPA() {
 		TPA tpa = new TPA();
 
-		Node A = new Node(tpa, "A");
-		Node B = new Node(tpa, "B");
-		Node C = new Node(tpa, "C");
-		Node D = new Node(tpa, "D");
-		Node E = new Node(tpa, "E");
-		Node F = new Node(tpa, "F");
-		Node G = new Node(tpa, "G");
-		Node H = new Node(tpa, "H");
-		Node I = new Node(tpa, "I");
+		Node A = tpa.createNode("A");
+		Node B1 = tpa.createNode("B1");
+		Node B2 = tpa.createNode("B2");
+		Node C1 = tpa.createNode("C1");
+		Node C2 = tpa.createNode("C2");
+		Node D = tpa.createNode("D");
+		Node E = tpa.createNode("E");
+		Node F = tpa.createNode("F");
+		Node G = tpa.createNode("G");
+		Node H = tpa.createNode("H");
+		Node I = tpa.createNode("I");
+		Node J = tpa.createNode("J");
 
 		A.setStartingNode(true);
-		I.setFinalNode(true);
+		J.setFinalNode(true);
 
-		Transition t1 = new Transition(tpa);
-		Transition t2 = new Transition(tpa);
-		Transition t3 = new Transition(tpa);
-		Transition t4 = new Transition(tpa);
-		Transition t5 = new Transition(tpa);
-		Transition t6 = new Transition(tpa);
-		Transition t7 = new Transition(tpa);
-
-		t1.addSource(A).addEnd(B);
-		t2.addSource(A).addEnd(C);
-		t3.addSource(B).addEnd(D);
-		t4.addSource(C).addEnd(D);
-		t5.addSource(D).addEnd(E, F);
-		t6.addSource(E, F).addEnd(G, H);
-		t7.addSource(G, H).addEnd(I);
+		tpa.createTransition(A).addEnd(B1);
+		tpa.createTransition(A).addEnd(C1);
+		tpa.createTransition(A).addEnd(B2);
+		tpa.createTransition(B1).addEnd(D);
+		tpa.createTransition(B2).addEnd(D);
+		tpa.createTransition(C1).addEnd(C2);
+		tpa.createTransition(C2).addEnd(D);
+		tpa.createTransition(D).addEnd(E, F);
+		tpa.createTransition(E, F).addEnd(G, H);
+		tpa.createTransition(G, H).addEnd(I);
+		tpa.createTransition(I).addEnd(J);
 
 		return tpa;
 	}
