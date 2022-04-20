@@ -1,7 +1,5 @@
 package palia.algorithm;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -19,7 +17,6 @@ import org.deckfour.xes.model.XEvent;
 import org.deckfour.xes.model.XLog;
 import org.deckfour.xes.model.XTrace;
 
-import palia.graphviz.exporter.GraphExporter;
 import palia.model.Node;
 import palia.model.TPA;
 import palia.model.Transition;
@@ -55,16 +52,6 @@ public class Palia {
 //		}
 
 		return res;
-	}
-
-	void ShowTPA(TPA tpa, String output) {
-
-		try {
-			GraphExporter.exportSVG(tpa, new File("output/" + output + ".svg"));
-		} catch (IOException e) { // TODO Auto-generated catch
-									// block
-									// e.printStackTrace(); }
-		}
 	}
 
 	private TPA MineOnwardMerge(TPA tpa, TransitionsMergeMode mode) {
@@ -458,6 +445,7 @@ public class Palia {
 		if (rests != null) {
 			Collection<Collection<Node>> Sequences = rests.values(); // Values.Select(v => v.ToArray()).ToArray();
 			RemoveInterSplitTransitions(tpa, region, Sequences, parallels, post);
+			Utils.AuditModel(tpa);
 			RemoveRepeatedTransitions(tpa);
 			FuseParallelEquivalentNodes(tpa, region, parallels);
 			RemoveRepeatedTransitions(tpa);
@@ -678,6 +666,7 @@ public class Palia {
 			for (var n1 : s1) {
 				var outcon = n0.getOutTransitions().stream().filter(nt -> nt.getEndNodes().size() == 1
 						&& nt.getEndNodes().stream().findFirst().get().getId() == n1.getId()).toList();
+				// ShowTPA(tpa, "out2");
 				if (outcon.size() > 0) {
 					// ANALYZE N0->N1->*
 					// var db = GetForwardNodes(tpa, n1).ToArray();
@@ -730,11 +719,12 @@ public class Palia {
 							}
 						}
 					}
-
 					res.add(outcon.stream().findFirst().get());
+
 				}
 			}
 		}
+		// ShowTPA(tpa, "out10");
 		return res;
 	}
 
