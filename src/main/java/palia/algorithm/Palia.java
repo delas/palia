@@ -444,8 +444,7 @@ public class Palia {
 		var rests = SplitSequencesinsideParallel(tpa, region, parallels);
 		if (rests != null) {
 			Collection<Collection<Node>> Sequences = rests.values(); // Values.Select(v => v.ToArray()).ToArray();
-			RemoveInterSplitTransitions(tpa, region, Sequences, parallels, post);
-			Utils.AuditModel(tpa);
+			RemoveInterSplitTransitions(tpa, region, Sequences, parallels, prev, post);
 			RemoveRepeatedTransitions(tpa);
 			FuseParallelEquivalentNodes(tpa, region, parallels);
 			RemoveRepeatedTransitions(tpa);
@@ -624,12 +623,12 @@ public class Palia {
 	}
 
 	void RemoveInterSplitTransitions(TPA tpa, Collection<Node> region, Collection<Collection<Node>> Sequences,
-			Collection<Node> parallels, Node post) {
+			Collection<Node> parallels, Node pre, Node post) {
 		Collection<Transition> res = new ArrayList<Transition>();
 		for (Collection<Node> s0 : Sequences) {
 			for (Collection<Node> s1 : Sequences) {
 				if (s0 != s1) {
-					res.addAll(GetInterSplitTransitions(tpa, region, s0, s1, parallels, post));
+					res.addAll(GetInterSplitTransitions(tpa, region, s0, s1, parallels, pre, post));
 				}
 			}
 		}
@@ -641,7 +640,7 @@ public class Palia {
 	}
 
 	Collection<Transition> GetInterSplitTransitions(TPA tpa, Collection<Node> region, Collection<Node> _s0,
-			Collection<Node> _s1, Collection<Node> parallels, Node post) {
+			Collection<Node> _s1, Collection<Node> parallels, Node pre, Node post) {
 		Collection<Transition> res = new ArrayList<Transition>();
 		// var s = region.Where(x => _s0.Any(y => PMLogHelper.IsEquivalent(x,
 		// y))).Union(_s0).ToArray();
@@ -711,15 +710,22 @@ public class Palia {
 								CreateTransition(tpa, x1, n1);
 							}
 						} else {
-							var prev = _s1.stream().findFirst().get();
-							if (prev != n1) {
+							var nprev = _s1.stream().findFirst().get();
+							if (nprev != n1) {
 								// tpa.AddNodeTransition(new Guid[] { prev.Id }, new Guid[] { n1.Id }, "");
-								CreateTransition(tpa, prev, n1);
+								if (!Utils.IsEquivalent(n1, nprev)) {
+									CreateTransition(tpa, nprev, n1);
+								} else {
+									// FuseNodes(tpa, prev, n1);
+									CreateTransition(tpa, pre, n1);
+								}
 
 							}
 						}
 					}
 					res.add(outcon.stream().findFirst().get());
+					// Utils.AuditModel(tpa);
+					var XXX = "";
 
 				}
 			}
