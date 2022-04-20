@@ -69,7 +69,7 @@ public class test {
 
 	public static TPA mine() {
 		Palia p = new Palia();
-		return p.mine(getLog5());
+		return p.mine(getLog7());
 	}
 
 	public static XLog getLog() {
@@ -153,6 +153,14 @@ public class test {
 	public static XLog getLog6() {
 		String res = "A X Y Z MM X1 Y1 Z1 D H\n" + "A X Z Y MM X1 Z1 Y1 D H\n" + "A Y Z X MM Y1 Z1 X1 D H\n"
 				+ "A Y X Z MM Y1 X1 Z1 D H\n" + "A Z X Y MM Z1 X1 Y1 D H\n" + "A Z Y X MM Z1 Y1 X1 D H";
+		return getLogfromString(res);
+	}
+
+	public static XLog getLog7() {
+		String res = "A X X1 Y Z Y1 Z1 Z2A Z3 D H\n" + "A X Z Y X1 Y1 Z1 Z2B Z3 D H\n" + "A Y Y1 Z Z1 X Z2A X1 Z3 D H\n"
+				+ "A Y X Y1 X1 Z Z1 Z2B Z3 D H\n" + "A Z Z1 Z2B X Y X1 Z3 Y1 D H\n" + "A Z Y Z1 Z2A Y1 Z3 X X1 D H\n"
+				+ "A Z Z1 Z2B Z3 Y Y1 X X1 D H\n" + "A Y Y1 Z Z1 Z2A Z3 X X1 D H\n" + "A Z Z1 Z2A Z3 Y Y1 X X1 D H\n"
+				+ "A X X1 Y Y1 Z Z1 Z2B Z3 D H";
 		return getLogfromString(res);
 	}
 

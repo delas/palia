@@ -28,23 +28,30 @@ public class Utils {
 		return n0.getId().equals(n1.getId());
 	}
 
-	public static void AuditModel(TPA tpa) {
+	public static Boolean AuditModel(TPA tpa) {
 		for (var n : tpa.getNodes()) {
 			if (!n.isStartingNode()) {
 				var tx = n.getInTransitions();
-				if (tx.size() == 0)
-					AuditError(tpa);
+				if (tx.size() == 0) {
+					// AuditError(tpa);
+					return false;
+				}
+
 			}
 			if (!n.isFinalNode()) {
 				var tx = n.getOutTransitions();
-				if (tx.size() == 0)
-					AuditError(tpa);
+				if (tx.size() == 0) {
+					// AuditError(tpa);
+					return false;
+				}
 			}
 		}
 		if (ExistTransition(tpa, "X", "X2") || ExistTransition(tpa, "Y", "Y2")) {
 
-			AuditError(tpa);
+			// AuditError(tpa);
+			return false;
 		}
+		return true;
 	}
 
 	public static void AuditError(TPA tpa) {

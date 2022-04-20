@@ -644,7 +644,7 @@ public class Palia {
 		Collection<Transition> res = new ArrayList<Transition>();
 		// var s = region.Where(x => _s0.Any(y => PMLogHelper.IsEquivalent(x,
 		// y))).Union(_s0).ToArray();
-		Collection<Node> s0 = new ArrayList(_s0);
+		List<Node> s0 = new ArrayList(_s0);
 		for (var x : region) {
 			if (_s0.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
 				s0.add(x);
@@ -652,27 +652,27 @@ public class Palia {
 		}
 		// var s1 = region.Where(x => _s1.Any(y => PMLogHelper.IsEquivalent(x,
 		// y))).Union(_s1).ToArray();
-		Collection<Node> s1 = new ArrayList(_s1);
+		List<Node> s1 = new ArrayList(_s1);
 		for (var x : region) {
 			if (_s1.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
 				s1.add(x);
 			}
 		}
-		s0 = GetForwardOrderedNodes(tpa, s0);
-		s1 = GetForwardOrderedNodes(tpa, s1);
+		s0 = GetForwardOrderedNodes(tpa, s0).stream().toList();
+		s1 = GetForwardOrderedNodes(tpa, s1).stream().toList();
 
 		for (var n0 : s0) {
 			for (var n1 : s1) {
 				var outcon = n0.getOutTransitions().stream().filter(nt -> nt.getEndNodes().size() == 1
 						&& nt.getEndNodes().stream().findFirst().get().getId() == n1.getId()).toList();
-				// ShowTPA(tpa, "out2");
+				// Utils.ShowTPA(tpa, "out1");
 				if (outcon.size() > 0) {
 					// ANALYZE N0->N1->*
 					// var db = GetForwardNodes(tpa, n1).ToArray();
 					// var fn = GetForwardNodes(tpa, n1).Where(n => s0.Any(nx =>
 					// PMLogHelper.IsEquivalent(n, nx))).ToArray();
-					var db = ConcurrentNodesHelper.GetForwardNodes(n1);
-					Collection<Node> fn = new ArrayList();
+					var fwd = ConcurrentNodesHelper.GetForwardNodes(n1);
+					List<Node> fn = new ArrayList();
 					for (var x : ConcurrentNodesHelper.GetForwardNodes(n1)) {
 						if (s0.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
 							fn.add(x);
@@ -681,7 +681,7 @@ public class Palia {
 
 					if (fn.size() > 0) {
 						// tpa.AddNodeTransition(new Guid[] { n0.Id }, new Guid[] { x0.Id }, "");
-						var nx = fn.stream().findFirst().get();
+						var nx = fn.get(0);
 						CreateTransition(tpa, n0, nx);
 
 					} else {
@@ -695,7 +695,8 @@ public class Palia {
 						// Analyze *->N0->N1
 						// var bn = GetBackwardNodes(tpa, n0).Where(n => s1.Any(nx =>
 						// PMLogHelper.IsEquivalent(n, nx))).ToArray();
-						Collection<Node> bn = new ArrayList();
+						List<Node> bn = new ArrayList();
+						var bck = ConcurrentNodesHelper.GetBackwardNodes(n0);
 						for (var x : ConcurrentNodesHelper.GetBackwardNodes(n0)) {
 							if (s1.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
 								bn.add(x);
@@ -704,7 +705,7 @@ public class Palia {
 
 						// if (bn.FirstOrDefault() is TPATemplate.Node x1)
 						if (bn.size() > 0) {
-							var x1 = bn.stream().findFirst().get();
+							var x1 = bn.get(0);
 							if (x1 != n1) {
 								// tpa.AddNodeTransition(new Guid[] { x1.Id }, new Guid[] { n1.Id }, "");
 								CreateTransition(tpa, x1, n1);
@@ -724,8 +725,6 @@ public class Palia {
 						}
 					}
 					res.add(outcon.stream().findFirst().get());
-					// Utils.AuditModel(tpa);
-					var XXX = "";
 
 				}
 			}
