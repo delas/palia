@@ -693,16 +693,13 @@ public class Palia {
 
 					if (fn.size() > 0) {
 						// tpa.AddNodeTransition(new Guid[] { n0.Id }, new Guid[] { x0.Id }, "");
-						var tx = new Transition(tpa);
-						tx.getSourceNodes().add(n0);
-						tx.getEndNodes().add(fn.stream().findFirst().get());
+						var nx = fn.stream().findFirst().get();
+						CreateTransition(tpa, n0, nx);
 
 					} else {
 
 						// tpa.AddNodeTransition(new Guid[] { n0.Id }, new Guid[] { post.Id }, "");
-						var tx = new Transition(tpa);
-						tx.getSourceNodes().add(n0);
-						tx.getEndNodes().add(post);
+						CreateTransition(tpa, n0, post);
 
 					}
 					if (!parallels.contains(n0))// N0 is not initial
@@ -722,17 +719,14 @@ public class Palia {
 							var x1 = bn.stream().findFirst().get();
 							if (x1 != n1) {
 								// tpa.AddNodeTransition(new Guid[] { x1.Id }, new Guid[] { n1.Id }, "");
-								var tx = new Transition(tpa);
-								tx.getSourceNodes().add(x1);
-								tx.getEndNodes().add(n1);
+								CreateTransition(tpa, x1, n1);
 							}
 						} else {
 							var prev = _s1.stream().findFirst().get();
 							if (prev != n1) {
 								// tpa.AddNodeTransition(new Guid[] { prev.Id }, new Guid[] { n1.Id }, "");
-								var tx = new Transition(tpa);
-								tx.getSourceNodes().add(prev);
-								tx.getEndNodes().add(n1);
+								CreateTransition(tpa, prev, n1);
+
 							}
 						}
 					}
@@ -742,6 +736,12 @@ public class Palia {
 			}
 		}
 		return res;
+	}
+
+	private void CreateTransition(TPA tpa, Node n0, Node n1) {
+		var tx = new Transition(tpa);
+		tx.getSourceNodes().add(n0);
+		tx.getEndNodes().add(n1);
 	}
 
 	// END APPLY PARALLEL REGION
