@@ -57,10 +57,10 @@ public class Palia {
 		return res;
 	}
 
-	void ShowTPA(TPA tpa) {
+	void ShowTPA(TPA tpa, String output) {
 
 		try {
-			GraphExporter.exportSVG(tpa, new File("output/out2.svg"));
+			GraphExporter.exportSVG(tpa, new File("output/" + output + ".svg"));
 		} catch (IOException e) { // TODO Auto-generated catch
 									// block
 									// e.printStackTrace(); }

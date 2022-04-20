@@ -69,7 +69,7 @@ public class test {
 
 	public static TPA mine() {
 		Palia p = new Palia();
-		return p.mine(getLog6());
+		return p.mine(getLog5());
 	}
 
 	public static XLog getLog() {
