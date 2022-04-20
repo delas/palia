@@ -387,6 +387,16 @@ public class Palia {
 		return res;
 	}
 
+	public Collection<Node> GetForwardOrderedNodes(TPA tpa, Collection<Node> region) {
+		Collection<Node> res = new ArrayList<Node>();
+		for (var n : GetForwardOrderedNodes(tpa)) {
+			if (region.contains(n)) {
+				res.add(n);
+			}
+		}
+		return res;
+	}
+
 	private void GetParallelHypothesis(TPA tpa, Node n0) {
 		Collection<Node> acc0 = GetParallelFollowingNodes(tpa, n0);
 		Collection<Node> region = GetParalleForwardAccesibleNodes(tpa, n0);
@@ -661,6 +671,8 @@ public class Palia {
 				s1.add(x);
 			}
 		}
+		s0 = GetForwardOrderedNodes(tpa, s0);
+		s1 = GetForwardOrderedNodes(tpa, s1);
 
 		for (var n0 : s0) {
 			for (var n1 : s1) {
