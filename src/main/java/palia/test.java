@@ -13,7 +13,6 @@ import org.deckfour.xes.model.XTrace;
 
 import palia.algorithm.Palia;
 import palia.graphviz.exporter.GraphExporter;
-import palia.graphviz.exporter.TPAToDot;
 import palia.model.Node;
 import palia.model.TPA;
 import palia.model.Transition;
@@ -23,10 +22,7 @@ public class test {
 	private static XFactory factory = new XFactoryNaiveImpl();
 
 	public static void main(String[] args) throws Exception {
-//		GraphExporter.exportSVG(mine(), new File("output/out.svg"));
-		TPA t = getTPA2();
-		GraphExporter.exportSVG(TPAToDot.exportOld(t), new File("output/out-old.svg"));
-		GraphExporter.exportSVG(TPAToDot.export(t), new File("output/out.svg"));
+		GraphExporter.exportSVG(mine(), new File("output/out.svg"));
 		System.out.println("done");
 	}
 
@@ -90,7 +86,7 @@ public class test {
 
 	public static TPA mine() {
 		Palia p = new Palia();
-		return p.mine(getLog6());
+		return p.mine(getLog5());
 	}
 
 	public static XLog getLog() {
