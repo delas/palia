@@ -3,6 +3,7 @@ package palia.graphviz.exporter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import palia.graphviz.Dot;
@@ -15,18 +16,21 @@ import palia.model.Transition;
 public class TPAToDot {
 
 	public static Dot export(TPA tpa) {
-		Map<UUID, DotNode> idToNodes = new HashMap<>();
+		Map<UUID, DotNode> idToStartNodes = new HashMap<>();
+		Map<UUID, DotNode> idToTargetNodes = new HashMap<>();
 
 		Dot dot = new Dot();
 		dot.setOption("rankdir", "LR");
 		dot.setOption("outputorder", "edgesfirst");
+//		dot.setOption("splines", "ortho");
 
 		DotNode startNode = makeUtilityNode(dot, "@Start");
 		DotNode endNode = makeUtilityNode(dot, "@End");
 
 		for (Node n : tpa.getNodes()) {
 			DotNode dotNode = makeActivityNode(dot, n.getName());
-			idToNodes.put(n.getId(), dotNode);
+			idToStartNodes.put(n.getId(), dotNode);
+			idToTargetNodes.put(n.getId(), dotNode);
 
 			if (n.isStartingNode()) {
 				dot.addEdge(startNode, dotNode);
@@ -36,39 +40,55 @@ public class TPAToDot {
 			}
 		}
 
+		for (Node n : tpa.getNodes()) {
+			Set<Transition> outgoing = n.getOutTransitions(false);
+			if (outgoing.size() > 1) {
+				DotNode gateway = makeGatewayNode(dot, "&times;");
+				makeEdge(dot, idToStartNodes.get(n.getId()), gateway);
+				idToStartNodes.put(n.getId(), gateway);
+			}
+
+			Set<Transition> incoming = n.getInTransitions(false);
+			if (incoming.size() > 1) {
+				DotNode gateway = makeGatewayNode(dot, "&times;");
+				makeEdge(dot, gateway, idToTargetNodes.get(n.getId()));
+				idToTargetNodes.put(n.getId(), gateway);
+			}
+		}
+
 		for (Transition t : tpa.getTransitions()) {
 			Collection<Node> sources = t.getSourceNodes();
 			Collection<Node> targets = t.getEndNodes();
 
 			// sequence flow or XOR gateway
 			if (sources.size() == 1 && targets.size() == 1) {
-				DotNode sourceNode = idToNodes.get(sources.stream().findAny().get().getId());
-				DotNode targetNode = idToNodes.get(targets.stream().findAny().get().getId());
+				DotNode sourceNode = idToStartNodes.get(sources.stream().findAny().get().getId());
+				DotNode targetNode = idToTargetNodes.get(targets.stream().findAny().get().getId());
 				makeEdge(dot, sourceNode, targetNode);
 			}
 
 			// parallel split
 			if (sources.size() == 1 && targets.size() > 1) {
-				DotNode sourceNode = idToNodes.get(sources.stream().findAny().get().getId());
+				DotNode sourceNode = idToStartNodes.get(sources.stream().findAny().get().getId());
 				DotNode gateway = makeGatewayNode(dot, "+");
 				makeEdge(dot, sourceNode, gateway);
 				sourceNode = gateway;
 
 				for (Node target : targets) {
-					DotNode targetNode = idToNodes.get(target.getId());
+					DotNode targetNode = idToTargetNodes.get(target.getId());
 					makeEdge(dot, sourceNode, targetNode);
 				}
 			}
 
 			// parallel join
 			if (sources.size() > 1 && targets.size() == 1) {
-				DotNode targetNode = idToNodes.get(targets.stream().findAny().get().getId());
+				DotNode targetNode = idToTargetNodes.get(targets.stream().findAny().get().getId());
 				DotNode gateway = makeGatewayNode(dot, "+");
 				makeEdge(dot, gateway, targetNode);
 				targetNode = gateway;
 
 				for (Node source : sources) {
-					DotNode sourceNode = idToNodes.get(source.getId());
+					DotNode sourceNode = idToStartNodes.get(source.getId());
 					makeEdge(dot, sourceNode, targetNode);
 				}
 			}
@@ -79,10 +99,10 @@ public class TPAToDot {
 				DotNode gateway2 = makeGatewayNode(dot, "+");
 				makeEdge(dot, gateway1, gateway2);
 				for (Node source : sources) {
-					makeEdge(dot, idToNodes.get(source.getId()), gateway1);
+					makeEdge(dot, idToStartNodes.get(source.getId()), gateway1);
 				}
 				for (Node target : targets) {
-					makeEdge(dot, gateway2, idToNodes.get(target.getId()));
+					makeEdge(dot, gateway2, idToTargetNodes.get(target.getId()));
 				}
 			}
 		}

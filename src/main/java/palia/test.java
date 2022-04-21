@@ -13,6 +13,7 @@ import org.deckfour.xes.model.XTrace;
 
 import palia.algorithm.Palia;
 import palia.graphviz.exporter.GraphExporter;
+import palia.graphviz.exporter.TPAToDot;
 import palia.model.Node;
 import palia.model.TPA;
 import palia.model.Transition;
@@ -22,7 +23,10 @@ public class test {
 	private static XFactory factory = new XFactoryNaiveImpl();
 
 	public static void main(String[] args) throws Exception {
-		GraphExporter.exportSVG(mine(), new File("output/out.svg"));
+//		GraphExporter.exportSVG(mine(), new File("output/out.svg"));
+		TPA t = getTPA2();
+		GraphExporter.exportSVG(TPAToDot.exportOld(t), new File("output/out-old.svg"));
+		GraphExporter.exportSVG(TPAToDot.export(t), new File("output/out.svg"));
 		System.out.println("done");
 	}
 
@@ -30,7 +34,6 @@ public class test {
 		TPA tpa = new TPA();
 
 		Node A = tpa.createNode("A");
-		Node B1 = tpa.createNode("B1");
 		Node B2 = tpa.createNode("B2");
 		Node C1 = tpa.createNode("C1");
 		Node C2 = tpa.createNode("C2");
@@ -45,10 +48,9 @@ public class test {
 		A.setStartingNode(true);
 		J.setFinalNode(true);
 
-		tpa.createTransition(A).addEnd(B1);
+		tpa.createTransition(A).addEnd(D);
 		tpa.createTransition(A).addEnd(C1);
 		tpa.createTransition(A).addEnd(B2);
-		tpa.createTransition(B1).addEnd(D);
 		tpa.createTransition(B2).addEnd(D);
 		tpa.createTransition(C1).addEnd(C2);
 		tpa.createTransition(C2).addEnd(D);
@@ -56,6 +58,25 @@ public class test {
 		tpa.createTransition(E, F).addEnd(G, H);
 		tpa.createTransition(G, H).addEnd(I);
 		tpa.createTransition(I).addEnd(J);
+
+		return tpa;
+	}
+
+	public static TPA getTPA2() {
+		TPA tpa = new TPA();
+
+		Node A = tpa.createNode("A");
+		A.setStartingNode(true);
+		Node B = tpa.createNode("B");
+		Node C = tpa.createNode("C");
+		Node D = tpa.createNode("D");
+		Node E = tpa.createNode("E");
+		E.setFinalNode(true);
+
+		tpa.createTransition(A).addEnd(B, C);
+		tpa.createTransition(A).addEnd(D);
+		tpa.createTransition(B, C).addEnd(E);
+		tpa.createTransition(D).addEnd(E);
 
 		return tpa;
 	}
@@ -69,7 +90,7 @@ public class test {
 
 	public static TPA mine() {
 		Palia p = new Palia();
-		return p.mine(getLog7());
+		return p.mine(getLog6());
 	}
 
 	public static XLog getLog() {
