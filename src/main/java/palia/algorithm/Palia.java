@@ -26,44 +26,54 @@ public class Palia {
 	private ParallelIdentificationMode ParallelIdentificationPolicy = ParallelIdentificationMode.SplitConcurrence;
 
 	public TPA mine(XLog log) {
+		long time = System.currentTimeMillis();
 		System.out.print("Extracting log variants... ");
 		Map<List<String>, Integer> logToProcess = Utils.extractVariants(log);
-		System.out.println("Done!");
+		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
+		time = System.currentTimeMillis();
 
 		System.out.print("Constructing simple acceptor tree... ");
 		TPA res = SimpleAcceptorTree(logToProcess.keySet());
-		System.out.println("Done!");
+		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
+		time = System.currentTimeMillis();
 
 		System.out.print("Consecutive merge... ");
 		res = ConsecutiveMerge(res);
-		System.out.println("Done!");
+		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
+		time = System.currentTimeMillis();
 
 		System.out.print("Remove repeated transitions... ");
 		RemoveRepeatedTransitions(res);
-		System.out.println("Done!");
+		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
+		time = System.currentTimeMillis();
 
 		System.out.print("Fuse end nodes... ");
 		FuseEndNodes(res);
-		System.out.println("Done!");
+		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
+		time = System.currentTimeMillis();
 
 		// TODO: MIlestones is for Interactive Palia
 		// (Alert: This implementation said always J for milestone)
 		System.out.print("Fuse milestones... ");
 		FuseMilestones(res);
-		System.out.println("Done!");
+		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
+		time = System.currentTimeMillis();
 
 		System.out.print("Mine onward merge... ");
 		MineOnwardMerge(res, TransitionsMergeMode.Inline);
-		System.out.println("Done!");
+		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
+		time = System.currentTimeMillis();
 		// ShowTPA(res);
 
 		System.out.print("Parallel forward merge... ");
 		res = ParallelForwardMerge(res);
-		System.out.println("Done!");
+		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
+		time = System.currentTimeMillis();
 
 		System.out.print("Mine onward merge... ");
 		res = MineOnwardMerge(res, TransitionsMergeMode.Equivalent);
-		System.out.println("Done!");
+		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
+		time = System.currentTimeMillis();
 
 //		if (transmode == TransitionsMergeMode.Equivalent) {
 //			while (nodesnumber > res.getNodes().size()) {
