@@ -8,14 +8,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.deckfour.xes.extension.std.XConceptExtension;
-import org.deckfour.xes.model.XEvent;
 import org.deckfour.xes.model.XLog;
-import org.deckfour.xes.model.XTrace;
 
 import palia.model.Node;
 import palia.model.TPA;
@@ -28,20 +26,44 @@ public class Palia {
 	private ParallelIdentificationMode ParallelIdentificationPolicy = ParallelIdentificationMode.SplitConcurrence;
 
 	public TPA mine(XLog log) {
-		TPA res = SimpleAcceptorTree(log);
-		res = ConsecutiveMerge(res);
+		System.out.print("Extracting log variants... ");
+		Map<List<String>, Integer> logToProcess = Utils.extractVariants(log);
+		System.out.println("Done!");
 
+		System.out.print("Constructing simple acceptor tree... ");
+		TPA res = SimpleAcceptorTree(logToProcess.keySet());
+		System.out.println("Done!");
+
+		System.out.print("Consecutive merge... ");
+		res = ConsecutiveMerge(res);
+		System.out.println("Done!");
+
+		System.out.print("Remove repeated transitions... ");
 		RemoveRepeatedTransitions(res);
+		System.out.println("Done!");
+
+		System.out.print("Fuse end nodes... ");
 		FuseEndNodes(res);
+		System.out.println("Done!");
+
 		// TODO: MIlestones is for Interactive Palia
 		// (Alert: This implementation said always J for milestone)
+		System.out.print("Fuse milestones... ");
 		FuseMilestones(res);
+		System.out.println("Done!");
 
+		System.out.print("Mine onward merge... ");
 		MineOnwardMerge(res, TransitionsMergeMode.Inline);
+		System.out.println("Done!");
 		// ShowTPA(res);
-		res = ParallelForwardMerge(res);
 
+		System.out.print("Parallel forward merge... ");
+		res = ParallelForwardMerge(res);
+		System.out.println("Done!");
+
+		System.out.print("Mine onward merge... ");
 		res = MineOnwardMerge(res, TransitionsMergeMode.Equivalent);
+		System.out.println("Done!");
 
 //		if (transmode == TransitionsMergeMode.Equivalent) {
 //			while (nodesnumber > res.getNodes().size()) {
@@ -66,19 +88,19 @@ public class Palia {
 		return tpa;
 	}
 
-	private TPA SimpleAcceptorTree(XLog log) {
+	private TPA SimpleAcceptorTree(Set<List<String>> log) {
 		TPA res = new TPA();
-		for (XTrace t : log) {
+		for (List<String> t : log) {
 			res = UpdateAcceptorTree(res, t);
 		}
 		return res;
 	}
 
-	private TPA UpdateAcceptorTree(TPA tpa, XTrace t) {
+	private TPA UpdateAcceptorTree(TPA tpa, List<String> t) {
 		if (t.size() > 0) {
 			Node s0 = UpdateStartingNode(tpa, t);
 			for (int i = 1; i < t.size(); i++) {
-				XEvent e = t.get(i);
+				String e = t.get(i);
 				s0 = UpdateNextNode(tpa, s0, e);
 			}
 			s0.setFinalNode(true);
@@ -86,11 +108,11 @@ public class Palia {
 		return tpa;
 	}
 
-	private Node UpdateNextNode(TPA tpa, Node current, XEvent e) {
+	private Node UpdateNextNode(TPA tpa, Node current, String e) {
 		Set<Transition> trans = tpa.getExclusiveTransitionsfromSourceNodes(List.of(current));
 		for (Transition t : trans) {
 			for (Node n : t.getEndNodes()) {
-				if (n.getName().equals(XConceptExtension.instance().extractName(e))) {
+				if (n.getName().equals(e)) {
 					return n;
 				}
 			}
@@ -103,10 +125,10 @@ public class Palia {
 		return res;
 	}
 
-	private Node UpdateStartingNode(TPA tpa, XTrace t) {
-		XEvent e0 = t.get(0);
+	private Node UpdateStartingNode(TPA tpa, List<String> t) {
+		String e0 = t.get(0);
 		for (Node n : tpa.getStartingNodes()) {
-			if (n.getName().equals(XConceptExtension.instance().extractName(e0))) {
+			if (n.getName().equals(e0)) {
 				return n;
 			}
 		}

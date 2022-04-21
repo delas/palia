@@ -3,7 +3,13 @@ package palia.utils;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.deckfour.xes.extension.std.XConceptExtension;
+import org.deckfour.xes.model.XLog;
+import org.deckfour.xes.model.XTrace;
 
 import palia.graphviz.exporter.GraphExporter;
 import palia.model.Node;
@@ -81,5 +87,18 @@ public class Utils {
 									// block
 									// e.printStackTrace(); }
 		}
+	}
+
+	public static Map<List<String>, Integer> extractVariants(XLog log) {
+		Map<List<String>, Integer> res = new HashMap<>();
+		for (XTrace trace : log) {
+			List<String> t = trace.stream().map(e -> XConceptExtension.instance().extractName(e)).toList();
+			int frequency = 1;
+			if (res.containsKey(t)) {
+				frequency += res.get(t);
+			}
+			res.put(t, frequency);
+		}
+		return res;
 	}
 }
