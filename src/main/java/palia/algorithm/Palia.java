@@ -15,6 +15,9 @@ import java.util.stream.Collectors;
 
 import org.deckfour.xes.model.XLog;
 
+import palia.algorithm.callback.CLIPaliaMinerStatusUpdater;
+import palia.algorithm.callback.PaliaMinerStatus;
+import palia.algorithm.callback.PaliaMinerStatusUpdater;
 import palia.model.Node;
 import palia.model.TPA;
 import palia.model.Transition;
@@ -26,54 +29,48 @@ public class Palia {
 	private ParallelIdentificationMode ParallelIdentificationPolicy = ParallelIdentificationMode.SplitConcurrence;
 
 	public TPA mine(XLog log) {
-		long time = System.currentTimeMillis();
-		System.out.print("Extracting log variants... ");
+		return mine(log, new CLIPaliaMinerStatusUpdater());
+	}
+
+	public TPA mine(XLog log, PaliaMinerStatusUpdater updater) {
+		updater.update(PaliaMinerStatus.EXTRACT_LOG_VARIANTS, true);
 		Map<List<String>, Integer> logToProcess = Utils.extractVariants(log);
-		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
-		time = System.currentTimeMillis();
+		updater.update(PaliaMinerStatus.EXTRACT_LOG_VARIANTS, false);
 
-		System.out.print("Constructing simple acceptor tree... ");
+		updater.update(PaliaMinerStatus.SIMPLE_ACCEPTOR_TREE, true);
 		TPA res = SimpleAcceptorTree(logToProcess.keySet());
-		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
-		time = System.currentTimeMillis();
+		updater.update(PaliaMinerStatus.SIMPLE_ACCEPTOR_TREE, false);
 
-		System.out.print("Consecutive merge... ");
+		updater.update(PaliaMinerStatus.CONSECUTIVE_MERGE, true);
 		res = ConsecutiveMerge(res);
-		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
-		time = System.currentTimeMillis();
+		updater.update(PaliaMinerStatus.CONSECUTIVE_MERGE, false);
 
-		System.out.print("Remove repeated transitions... ");
+		updater.update(PaliaMinerStatus.REMOVE_REPEATED_TRANSITIONS, true);
 		RemoveRepeatedTransitions(res);
-		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
-		time = System.currentTimeMillis();
+		updater.update(PaliaMinerStatus.REMOVE_REPEATED_TRANSITIONS, false);
 
-		System.out.print("Fuse end nodes... ");
+		updater.update(PaliaMinerStatus.FUSE_END_NODES, true);
 		FuseEndNodes(res);
-		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
-		time = System.currentTimeMillis();
+		updater.update(PaliaMinerStatus.FUSE_END_NODES, false);
 
 		// TODO: MIlestones is for Interactive Palia
 		// (Alert: This implementation said always J for milestone)
-		System.out.print("Fuse milestones... ");
+		updater.update(PaliaMinerStatus.FUSE_MILESTONES, true);
 		FuseMilestones(res);
-		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
-		time = System.currentTimeMillis();
+		updater.update(PaliaMinerStatus.FUSE_MILESTONES, false);
 
-		System.out.print("Mine onward merge... ");
+		updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_1, true);
 		MineOnwardMerge(res, TransitionsMergeMode.Inline);
-		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
-		time = System.currentTimeMillis();
+		updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_1, false);
 		// ShowTPA(res);
 
-		System.out.print("Parallel forward merge... ");
+		updater.update(PaliaMinerStatus.PARALLEL_FORWARD_MERGE, true);
 		res = ParallelForwardMerge(res);
-		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
-		time = System.currentTimeMillis();
+		updater.update(PaliaMinerStatus.PARALLEL_FORWARD_MERGE, false);
 
-		System.out.print("Mine onward merge... ");
+		updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_2, true);
 		res = MineOnwardMerge(res, TransitionsMergeMode.Equivalent);
-		System.out.println("Done! (" + (System.currentTimeMillis() - time) + " ms)");
-		time = System.currentTimeMillis();
+		updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_2, false);
 
 //		if (transmode == TransitionsMergeMode.Equivalent) {
 //			while (nodesnumber > res.getNodes().size()) {
