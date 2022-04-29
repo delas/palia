@@ -38,7 +38,7 @@ public class Palia {
 		updater.update(PaliaMinerStatus.EXTRACT_LOG_VARIANTS, false);
 
 		updater.update(PaliaMinerStatus.SIMPLE_ACCEPTOR_TREE, true);
-		TPA res = SimpleAcceptorTree(logToProcess.keySet());
+		TPA res = SimpleAcceptorTree(logToProcess);
 		updater.update(PaliaMinerStatus.SIMPLE_ACCEPTOR_TREE, false);
 
 		updater.update(PaliaMinerStatus.CONSECUTIVE_MERGE, true);
@@ -95,31 +95,32 @@ public class Palia {
 		return tpa;
 	}
 
-	private TPA SimpleAcceptorTree(Set<List<String>> log) {
+	private TPA SimpleAcceptorTree(Map<List<String>, Integer> log) {
 		TPA res = new TPA();
-		for (List<String> t : log) {
-			res = UpdateAcceptorTree(res, t);
+		for (List<String> t : log.keySet()) {
+			res = UpdateAcceptorTree(res, t, log.get(t));
 		}
 		return res;
 	}
 
-	private TPA UpdateAcceptorTree(TPA tpa, List<String> t) {
+	private TPA UpdateAcceptorTree(TPA tpa, List<String> t, int frequency) {
 		if (t.size() > 0) {
 			Node s0 = UpdateStartingNode(tpa, t);
 			for (int i = 1; i < t.size(); i++) {
 				String e = t.get(i);
-				s0 = UpdateNextNode(tpa, s0, e);
+				s0 = UpdateNextNode(tpa, s0, e, frequency);
 			}
 			s0.setFinalNode(true);
 		}
 		return tpa;
 	}
 
-	private Node UpdateNextNode(TPA tpa, Node current, String e) {
+	private Node UpdateNextNode(TPA tpa, Node current, String e, int frequency) {
 		Set<Transition> trans = tpa.getExclusiveTransitionsfromSourceNodes(List.of(current));
 		for (Transition t : trans) {
 			for (Node n : t.getEndNodes()) {
 				if (n.getName().equals(e)) {
+					t.incrementFrequency(frequency);
 					return n;
 				}
 			}
@@ -127,6 +128,7 @@ public class Palia {
 
 		Node res = new Node(tpa, e);
 		Transition nt = new Transition(tpa);
+		nt.incrementFrequency(frequency);
 		nt.getSourceNodes().add(current);
 		nt.getEndNodes().add(res);
 		return res;
@@ -226,21 +228,23 @@ public class Palia {
 		}
 
 		for (Node n0 : region) {
-			Set<Node> nodes = new HashSet<>();
+			Map<Node, Transition> nodes = new HashMap<>();
 			for (Transition ot : n0.getOutTransitions()) {
 				Node endNode = ot.getEndNodes().iterator().next();
-				if (!nodes.contains(endNode)) {
-					nodes.add(endNode);
+				if (!nodes.containsKey(endNode)) {
+					nodes.put(endNode, ot);
 				} else {
+					nodes.get(endNode).incrementFrequency(ot.getFrequency());
 					tpa.getTransitions().remove(ot);
 				}
 			}
 			nodes.clear();
 			for (Transition it : n0.getInTransitions()) {
 				Node sourceNode = it.getSourceNodes().iterator().next();
-				if (!nodes.contains(sourceNode)) {
-					nodes.add(sourceNode);
+				if (!nodes.containsKey(sourceNode)) {
+					nodes.put(sourceNode, it);
 				} else {
+					nodes.get(sourceNode).incrementFrequency(it.getFrequency());
 					tpa.getTransitions().remove(it);
 				}
 			}
@@ -286,7 +290,7 @@ public class Palia {
 							case Extrict:
 								if (f0 != f1 && n0.getId().equals(n1.getId()) && Utils.IsEquivalent(f0, f1)) {
 									FuseNodes(tpa, f0, f1);
-									tpa.getTransitions().remove(nt1);
+//									tpa.getTransitions().remove(nt1);
 									changed = true;
 								}
 								break;
@@ -297,7 +301,7 @@ public class Palia {
 									if (n0 != n1) {
 										FuseNodes(tpa, n0, n1);
 									}
-									tpa.getTransitions().remove(nt1);
+//									tpa.getTransitions().remove(nt1);
 									changed = true;
 								}
 								break;
@@ -351,7 +355,7 @@ public class Palia {
 						case Extrict:
 							if (n0 != n1 && f0.getId().equals(f1.getId()) && Utils.IsEquivalent(n0, n1)) {
 								FuseNodes(tpa, n0, n1);
-								tpa.getTransitions().remove(nt1);
+//								tpa.getTransitions().remove(nt1);
 								changed = true;
 							}
 							break;
@@ -360,9 +364,10 @@ public class Palia {
 							if (n0 != n1 && Utils.IsEquivalent(f0, f1) && Utils.IsEquivalent(n0, n1)) {
 								FuseNodes(tpa, n0, n1);
 								if (f0 != f1) {
+									System.out.println(f0 + " -- " + f1);
 									FuseNodes(tpa, f0, f1);
 								}
-								tpa.getTransitions().remove(nt1);
+//								tpa.getTransitions().remove(nt1);
 								changed = true;
 							}
 							break;
@@ -604,7 +609,7 @@ public class Palia {
 	HashMap<Node, Collection<Node>> SplitSequencesinsideParallel(TPA tpa, Collection<Node> region,
 			Collection<Node> parallels) {
 
-		Collection<Node> regionrests = new ArrayList();
+		Collection<Node> regionrests = new ArrayList<>();
 
 		for (var r : region) {
 			if (!parallels.stream().anyMatch(h -> Utils.IsEquivalent(h, r))) {
@@ -616,13 +621,13 @@ public class Palia {
 			// var dict = parallels.ToDictionary(p => p, p => new List<TPATemplate.Node>() {
 			// p });
 			for (var p : parallels) {
-				dict.put(p, new ArrayList<Node>() {
+				dict.put(p, new ArrayList<>() {
 				});
 				dict.get(p).add(p);
 			}
 			for (var rr : regionrests) {
 				for (var p : parallels) {
-					Collection<Node> np = new ArrayList();
+					Collection<Node> np = new ArrayList<>();
 					np.add(p);
 					np.add(rr);
 					if (!IsParallel(tpa, region, np)) {

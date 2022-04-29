@@ -17,11 +17,14 @@ public class Transition {
 	private Set<Node> sourceNodes;
 	@Getter
 	private Set<Node> endNodes;
+	@Getter
+	private int frequency;
 
 	public Transition(TPA owner) {
 		this.id = UUID.randomUUID();
 		this.sourceNodes = new HashSet<>();
 		this.endNodes = new HashSet<>();
+		this.frequency = 0;
 
 		owner.registerTransition(this);
 	}
@@ -42,6 +45,24 @@ public class Transition {
 			endNodes.add(ni);
 		}
 		return this;
+	}
+
+	public int incrementFrequency() {
+		return incrementFrequency(1);
+	}
+
+	public int incrementFrequency(int amount) {
+		frequency += amount;
+		return frequency;
+	}
+
+	public int decrementFrequency() {
+		return decrementFrequency(1);
+	}
+
+	public int decrementFrequency(int amount) {
+		frequency -= amount;
+		return frequency;
 	}
 
 	@Override
