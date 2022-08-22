@@ -6,7 +6,7 @@ import org.deckfour.xes.extension.std.XConceptExtension;
 import org.deckfour.xes.factory.XFactory;
 import org.deckfour.xes.factory.XFactoryNaiveImpl;
 import org.deckfour.xes.in.XParser;
-import org.deckfour.xes.in.XesXmlGZIPParser;
+import org.deckfour.xes.in.XesXmlParser;
 import org.deckfour.xes.model.XEvent;
 import org.deckfour.xes.model.XLog;
 import org.deckfour.xes.model.XTrace;
@@ -22,7 +22,9 @@ public class test {
 	private static XFactory factory = new XFactoryNaiveImpl();
 
 	public static void main(String[] args) throws Exception {
-		GraphExporter.exportSVG(mine(), new File("output/out.svg"));
+
+		String fn = "output/pdc_2020_0000000.xes";
+		GraphExporter.exportSVG(mine(fn), new File("output/out.svg"));
 		System.out.println("done");
 	}
 
@@ -79,14 +81,15 @@ public class test {
 
 	public static TPA mine(String filename) throws Exception {
 		Palia p = new Palia();
-		XParser parser = new XesXmlGZIPParser();
+		// XParser parser = new XesXmlGZIPParser();
+		XParser parser = new XesXmlParser();
 		XLog log = parser.parse(new File(filename)).get(0);
 		return p.mine(log);
 	}
 
 	public static TPA mine() {
 		Palia p = new Palia();
-		return p.mine(getLog5());
+		return p.mine(getLog8());
 	}
 
 	public static XLog getLog() {
@@ -178,6 +181,11 @@ public class test {
 				+ "A Y X Y1 X1 Z Z1 Z2B Z3 D H\n" + "A Z Z1 Z2B X Y X1 Z3 Y1 D H\n" + "A Z Y Z1 Z2A Y1 Z3 X X1 D H\n"
 				+ "A Z Z1 Z2B Z3 Y Y1 X X1 D H\n" + "A Y Y1 Z Z1 Z2A Z3 X X1 D H\n" + "A Z Z1 Z2A Z3 Y Y1 X X1 D H\n"
 				+ "A X X1 Y Y1 Z Z1 Z2B Z3 D H";
+		return getLogfromString(res);
+	}
+
+	public static XLog getLog8() {
+		String res = "A B C D E F\n" + "A C B D E G\n" + "A D C B E G";
 		return getLogfromString(res);
 	}
 

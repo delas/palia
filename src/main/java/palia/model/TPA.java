@@ -13,9 +13,9 @@ public class TPA {
 
 	@Getter
 	private UUID name;
-	@Getter
+
 	private Set<Node> nodes;
-	@Getter
+
 	private Set<Transition> transitions;
 
 	public TPA() {
@@ -32,16 +32,56 @@ public class TPA {
 		return new Node(this, e);
 	}
 
+	public Set<Node> iterateNodes() {
+		return nodes;
+	}
+
+	public Set<Transition> iterateTransitions() {
+		return transitions;
+	}
+
+	public boolean hasNode(Node n) {
+		return nodes.contains(n);
+	}
+
+	public boolean hasTransition(Transition n) {
+		return transitions.contains(n);
+	}
+
+	public void removeNode(Node n) {
+		nodes.remove(n);
+	}
+
+	public void removeTransition(Transition t) {
+		transitions.remove(t);
+		for (Node n : t.getSourceNodes()) {
+			n.Output.remove(t);
+		}
+		for (Node n : t.getEndNodes()) {
+			n.Input.remove(t);
+		}
+	}
+
 	public Transition createTransition(Node... sources) {
 		return new Transition(this).addSource(sources);
 	}
 
-	public void registerTransition(Transition transition) {
-		transitions.add(transition);
+	public void registerTransition(Transition... T) {
+		for (Transition transition : T) {
+			transitions.add(transition);
+			for (Node n : transition.getSourceNodes()) {
+				n.Output.add(transition);
+			}
+			for (Node n : transition.getEndNodes()) {
+				n.Input.add(transition);
+			}
+		}
 	}
 
-	public void registerNode(Node node) {
-		nodes.add(node);
+	public void registerNode(Node... N) {
+		for (Node node : N) {
+			nodes.add(node);
+		}
 	}
 
 	public Collection<Node> getStartingNodes() {

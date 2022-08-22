@@ -48,6 +48,11 @@ public class DotEdge extends AbstractDotElement {
 		 */
 		DotNode localSource = source;
 		DotNode localTarget = target;
+
+		if (localSource == null || localTarget == null) {
+			return "UNK";
+		}
+
 		{
 			if (localSource instanceof DotCluster && !((DotCluster) localSource).getNodes().isEmpty()) {
 				localSource = ((DotCluster) localSource).getNodes().get(0);

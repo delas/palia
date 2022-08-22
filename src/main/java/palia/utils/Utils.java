@@ -35,7 +35,7 @@ public class Utils {
 	}
 
 	public static Boolean AuditModel(TPA tpa) {
-		for (var n : tpa.getNodes()) {
+		for (var n : tpa.iterateNodes()) {
 			if (!n.isStartingNode()) {
 				var tx = n.getInTransitions();
 				if (tx.size() == 0) {
@@ -65,7 +65,7 @@ public class Utils {
 	}
 
 	public static Boolean ExistTransition(TPA tpa, String x0, String x1) {
-		for (var t : tpa.getTransitions()) {
+		for (var t : tpa.iterateTransitions()) {
 			var s0 = t.getSourceNodes();
 			var s1 = t.getEndNodes();
 			if (s0.size() == 1 && s1.size() == 1) {

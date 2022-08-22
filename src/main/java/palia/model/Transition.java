@@ -33,6 +33,7 @@ public class Transition {
 	public Transition addSource(Node... n) {
 		for (Node ni : n) {
 			sourceNodes.add(ni);
+			ni.Output.add(this);
 		}
 		return this;
 	}
@@ -40,6 +41,7 @@ public class Transition {
 	public Transition addEnd(Node... n) {
 		for (Node ni : n) {
 			endNodes.add(ni);
+			ni.Input.add(this);
 		}
 		return this;
 	}

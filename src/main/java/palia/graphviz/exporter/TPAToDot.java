@@ -27,7 +27,7 @@ public class TPAToDot {
 		DotNode startNode = makeUtilityNode(dot, "@Start");
 		DotNode endNode = makeUtilityNode(dot, "@End");
 
-		for (Node n : tpa.getNodes()) {
+		for (Node n : tpa.iterateNodes()) {
 			DotNode dotNode = makeActivityNode(dot, n.getName());
 			idToStartNodes.put(n.getId(), dotNode);
 			idToTargetNodes.put(n.getId(), dotNode);
@@ -40,7 +40,7 @@ public class TPAToDot {
 			}
 		}
 
-		for (Node n : tpa.getNodes()) {
+		for (Node n : tpa.iterateNodes()) {
 			Set<Transition> outgoing = n.getOutTransitions(false);
 			if (outgoing.size() > 1) {
 				DotNode gateway = makeGatewayNode(dot, "&times;");
@@ -56,7 +56,7 @@ public class TPAToDot {
 			}
 		}
 
-		for (Transition t : tpa.getTransitions()) {
+		for (Transition t : tpa.iterateTransitions()) {
 			Collection<Node> sources = t.getSourceNodes();
 			Collection<Node> targets = t.getEndNodes();
 

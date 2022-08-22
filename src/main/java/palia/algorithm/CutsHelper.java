@@ -56,11 +56,11 @@ public class CutsHelper {
 	}
 
 	public static Collection<Node> GetBackwardedNodes(TPA t, Node n0) {
-		return GetBackwardedGroup(t, n0, t.getNodes());
+		return GetBackwardedGroup(t, n0, t.iterateNodes());
 	}
 
 	public static Collection<Node> GetForwardesNodes(TPA t, Node n0) {
-		return GetForwardedGroup(t, n0, t.getNodes());
+		return GetForwardedGroup(t, n0, t.iterateNodes());
 	}
 
 	public static Collection<Node> GetBackwardedGroup(TPA t, Node n0, Collection<Node> Region) {
@@ -78,13 +78,13 @@ public class CutsHelper {
 	public static void DeleteNode(TPA tpa, Node node) {
 		var it = node.getInTransitions();
 		var ot = node.getOutTransitions();
-		node.getInTransitions().stream().forEach(nt -> tpa.getTransitions().remove(nt));
-		node.getOutTransitions().stream().forEach(nt -> tpa.getTransitions().remove(nt));
-		tpa.getNodes().remove(node);
+		node.getInTransitions().stream().forEach(nt -> tpa.removeTransition(nt));
+		node.getOutTransitions().stream().forEach(nt -> tpa.removeTransition(nt));
+		tpa.removeNode(node);
 	}
 
 	public static void DeleteTransition(TPA tpa, Transition nt) {
-		tpa.getTransitions().remove(nt);
+		tpa.removeTransition(nt);
 	}
 
 }
