@@ -1,5 +1,6 @@
 package palia.model;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -38,7 +39,23 @@ public class Transition {
 		return this;
 	}
 
+	public Transition addSource(Collection<Node> n) {
+		for (Node ni : n) {
+			sourceNodes.add(ni);
+			ni.Output.add(this);
+		}
+		return this;
+	}
+
 	public Transition addEnd(Node... n) {
+		for (Node ni : n) {
+			endNodes.add(ni);
+			ni.Input.add(this);
+		}
+		return this;
+	}
+
+	public Transition addEnd(Collection<Node> n) {
 		for (Node ni : n) {
 			endNodes.add(ni);
 			ni.Input.add(this);

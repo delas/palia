@@ -14,6 +14,7 @@ import org.deckfour.xes.model.XTrace;
 import palia.graphviz.exporter.GraphExporter;
 import palia.model.Node;
 import palia.model.TPA;
+import palia.model.Transition;
 
 public class Utils {
 
@@ -40,6 +41,7 @@ public class Utils {
 				var tx = n.getInTransitions();
 				if (tx.size() == 0) {
 					// AuditError(tpa);
+
 					return false;
 				}
 
@@ -52,16 +54,18 @@ public class Utils {
 				}
 			}
 		}
-		if (ExistTransition(tpa, "X", "X2") || ExistTransition(tpa, "Y", "Y2")) {
 
-			// AuditError(tpa);
-			return false;
-		}
 		return true;
 	}
 
 	public static void AuditError(TPA tpa) {
 		ShowTPA(tpa, "AuditError");
+	}
+
+	public static void CheckAuditError(TPA tpa, String message) {
+		if (!Utils.AuditModel(tpa)) {
+			Utils.ShowTPA(tpa, message);
+		}
 	}
 
 	public static Boolean ExistTransition(TPA tpa, String x0, String x1) {
@@ -91,6 +95,7 @@ public class Utils {
 
 	public static Map<List<String>, Integer> extractVariants(XLog log) {
 		Map<List<String>, Integer> res = new HashMap<>();
+
 		for (XTrace trace : log) {
 			List<String> t = trace.stream().map(e -> XConceptExtension.instance().extractName(e)).toList();
 			int frequency = 1;
@@ -98,7 +103,16 @@ public class Utils {
 				frequency += res.get(t);
 			}
 			res.put(t, frequency);
+
 		}
 		return res;
+	}
+
+	public static void removeifnotbreakingtransition(TPA tpa, Transition nt) {
+
+		tpa.removeTransition(nt);
+		if (!AuditModel(tpa)) {
+			tpa.registerTransition(nt);
+		}
 	}
 }

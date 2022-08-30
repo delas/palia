@@ -72,6 +72,10 @@ public class Palia {
 		res = MineOnwardMerge(res, TransitionsMergeMode.Equivalent);
 		updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_2, false);
 
+		updater.update(PaliaMinerStatus.REMOVE_REPEATED_TRANSITIONS, true);
+		RemoveRepeatedTransitions(res);
+		updater.update(PaliaMinerStatus.REMOVE_REPEATED_TRANSITIONS, false);
+
 //		if (transmode == TransitionsMergeMode.Equivalent) {
 //			while (nodesnumber > res.getNodes().size()) {
 //				nodesnumber = res.getNodes().size();
@@ -432,8 +436,10 @@ public class Palia {
 					var mp = MoreParallels(tpa, sync.Region, g);// detec if there are more parallels on the region
 					if (mp.size() == 0) {
 						ApplyParallel(tpa, n0, Arrays.asList(g), sync.Region, sync.Sync);
+
 					} else {
 						ApplyParallel(tpa, n0, UnionNodes(Arrays.asList(g), mp), sync.Region, sync.Sync);
+
 					}
 				}
 			}
@@ -477,25 +483,36 @@ public class Palia {
 	void ApplyParallel(TPA tpa, Node prev, Collection<Node> parallels, Collection<Node> region, Node post) {
 
 		var rests = SplitSequencesinsideParallel(tpa, region, parallels);
+
 		if (rests != null) {
+			Utils.ShowTPA(tpa, "audit0");
 			Collection<Collection<Node>> Sequences = rests.values(); // Values.Select(v => v.ToArray()).ToArray();
 			RemoveInterSplitTransitions(tpa, region, Sequences, parallels, prev, post);
+			Utils.ShowTPA(tpa, "audit1");
 			RemoveRepeatedTransitions(tpa);
+			// Utils.ShowTPA(tpa, "audit1");
 			FuseParallelEquivalentNodes(tpa, region, parallels);
+			// Utils.ShowTPA(tpa, "audit1");
 			RemoveRepeatedTransitions(tpa);
+			// Utils.ShowTPA(tpa, "audit1");
 			MineOnwardMerge(tpa, TransitionsMergeMode.Inline);
+			// Utils.ShowTPA(tpa, "audit1");
 			RemoveRepeatedTransitions(tpa);
+			// Utils.ShowTPA(tpa, "audit1");
 			RemoveParallelSelfloops(tpa, parallels);
+			// Utils.ShowTPA(tpa, "audit1");
 			Transition tpre = new Transition(tpa);
 			tpre.getSourceNodes().add(prev);
 			tpre.getEndNodes().addAll(parallels);
+			// Utils.ShowTPA(tpa, "audit1");
 
 			// prev.getOutTransitions().Where(nt => nt.EndNodes.Count == 1 &&
 			// parallels.Select(p => p.Id).Contains(nt.EndNodes.First())).ToList()
 			// .ForEach(nt => tpa.NodeTransitions.Remove(nt));
 			for (var trx : prev.getOutTransitions().stream().filter(nt -> nt.getEndNodes().size() == 1
 					&& parallels.contains(nt.getEndNodes().stream().findFirst().get())).toList()) {
-				tpa.removeTransition(trx);
+				RemoveTransition(tpa, trx);
+				// tpa.removeTransition(trx);
 			}
 
 			for (var fin : SequenceFinals(tpa, Sequences, post)) {
@@ -539,6 +556,8 @@ public class Palia {
 			tpa.registerTransition(ot);
 
 		}
+
+		// Utils.ShowTPA(tpa, "audit1");
 
 	}
 
@@ -664,13 +683,19 @@ public class Palia {
 			for (Collection<Node> s1 : Sequences) {
 				if (s0 != s1) {
 					res.addAll(GetInterSplitTransitions(tpa, region, s0, s1, parallels, pre, post));
+
 				}
 			}
 		}
+
+		// Utils.ShowTPA(tpa, "audit0");
 		// res.ForEach(nt => tpa.NodeTransitions.Remove(nt));
 		for (var nt : res) {
+			// Utils.removeifnotbreakingtransition(tpa, nt);
 			tpa.removeTransition(nt);
 		}
+		// Utils.ShowTPA(tpa, "audit1");
+		// Utils.CheckAuditError(tpa, "audit1");
 
 	}
 
@@ -679,14 +704,17 @@ public class Palia {
 		Collection<Transition> res = new ArrayList<Transition>();
 		// var s = region.Where(x => _s0.Any(y => PMLogHelper.IsEquivalent(x,
 		// y))).Union(_s0).ToArray();
+		// s0 are all the _s0 that are in the region
 		List<Node> s0 = new ArrayList(_s0);
 		for (var x : region) {
 			if (_s0.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
 				s0.add(x);
 			}
 		}
+
 		// var s1 = region.Where(x => _s1.Any(y => PMLogHelper.IsEquivalent(x,
 		// y))).Union(_s1).ToArray();
+		// s1 are all the _s1 that are in the region
 		List<Node> s1 = new ArrayList(_s1);
 		for (var x : region) {
 			if (_s1.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
@@ -696,71 +724,21 @@ public class Palia {
 		s0 = GetForwardOrderedNodes(tpa, s0).stream().toList();
 		s1 = GetForwardOrderedNodes(tpa, s1).stream().toList();
 
-		for (var n0 : s0) {
-			for (var n1 : s1) {
-				var outcon = n0.getOutTransitions().stream().filter(nt -> nt.getEndNodes().size() == 1
-						&& nt.getEndNodes().stream().findFirst().get().getId() == n1.getId()).toList();
-				// Utils.ShowTPA(tpa, "out1");
-				if (outcon.size() > 0) {
-					// ANALYZE N0->N1->*
-					// var db = GetForwardNodes(tpa, n1).ToArray();
-					// var fn = GetForwardNodes(tpa, n1).Where(n => s0.Any(nx =>
-					// PMLogHelper.IsEquivalent(n, nx))).ToArray();
-					var fwd = ConcurrentNodesHelper.GetForwardNodes(n1);
-					List<Node> fn = new ArrayList();
-					for (var x : ConcurrentNodesHelper.GetForwardNodes(n1)) {
-						if (s0.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
-							fn.add(x);
-						}
+		boolean haschanges = true;
+		while (haschanges) {
+			haschanges = false;
+			for (var n0 : s0) {
+				for (var n1 : s1) {
+					var outcon = getSimpleTransition(tpa, n0, n1);
+					// Utils.ShowTPA(tpa, "out1");
+					if (outcon.size() > 0) {// we find transition that are inter sequences
+
+						// Utils.ShowTPA(tpa, "audit0");
+						SolveInterSequence(tpa, n0, n1, s0, s1, pre, post, parallels, outcon);
+						// Utils.ShowTPA(tpa, "audit1");
+						// res.add(outcon.stream().findFirst().get());
+						haschanges = true;
 					}
-
-					if (fn.size() > 0) {
-						// tpa.AddNodeTransition(new Guid[] { n0.Id }, new Guid[] { x0.Id }, "");
-						var nx = fn.get(0);
-						CreateTransition(tpa, n0, nx);
-
-					} else {
-
-						// tpa.AddNodeTransition(new Guid[] { n0.Id }, new Guid[] { post.Id }, "");
-						CreateTransition(tpa, n0, post);
-
-					}
-					if (!parallels.contains(n0))// N0 is not initial
-					{
-						// Analyze *->N0->N1
-						// var bn = GetBackwardNodes(tpa, n0).Where(n => s1.Any(nx =>
-						// PMLogHelper.IsEquivalent(n, nx))).ToArray();
-						List<Node> bn = new ArrayList();
-						var bck = ConcurrentNodesHelper.GetBackwardNodes(n0);
-						for (var x : ConcurrentNodesHelper.GetBackwardNodes(n0)) {
-							if (s1.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
-								bn.add(x);
-							}
-						}
-
-						// if (bn.FirstOrDefault() is TPATemplate.Node x1)
-						if (bn.size() > 0) {
-							var x1 = bn.get(0);
-							if (x1 != n1) {
-								// tpa.AddNodeTransition(new Guid[] { x1.Id }, new Guid[] { n1.Id }, "");
-								CreateTransition(tpa, x1, n1);
-							}
-						} else {
-							var nprev = _s1.stream().findFirst().get();
-							if (nprev != n1) {
-								// tpa.AddNodeTransition(new Guid[] { prev.Id }, new Guid[] { n1.Id }, "");
-								if (!Utils.IsEquivalent(n1, nprev)) {
-									CreateTransition(tpa, nprev, n1);
-								} else {
-									// FuseNodes(tpa, prev, n1);
-									CreateTransition(tpa, pre, n1);
-								}
-
-							}
-						}
-					}
-					res.add(outcon.stream().findFirst().get());
-
 				}
 			}
 		}
@@ -768,10 +746,111 @@ public class Palia {
 		return res;
 	}
 
+	private void SolveInterSequence(TPA tpa, Node n0, Node n1, Collection<Node> s0, Collection<Node> s1, Node pre,
+			Node post, Collection<Node> parallels, Collection<Transition> outcon) {
+
+		var intertrans = outcon.stream().findFirst().get();
+		// ANALYZE N0->N1->*
+		// var db = GetForwardNodes(tpa, n1).ToArray();
+		// var fn = GetForwardNodes(tpa, n1).Where(n => s0.Any(nx =>
+		// PMLogHelper.IsEquivalent(n, nx))).ToArray();
+		var fwd = ConcurrentNodesHelper.GetForwardNodes(n1);
+		List<Node> fn = new ArrayList();
+		for (var x : ConcurrentNodesHelper.GetForwardNodes(n1)) {
+			if (s0.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
+				fn.add(x);
+			}
+		}
+
+		if (fn.size() > 0) {
+			// tpa.AddNodeTransition(new Guid[] { n0.Id }, new Guid[] { x0.Id }, "");
+			var nx = fn.get(0);
+			CreateTransition(tpa, n0, nx);
+			RemoveTransition(tpa, intertrans);
+			// Utils.ShowTPA(tpa, "audit1");
+
+		} else {
+
+			// tpa.AddNodeTransition(new Guid[] { n0.Id }, new Guid[] { post.Id }, "");
+			CreateTransition(tpa, n0, post);
+			RemoveTransition(tpa, intertrans);
+			// Utils.ShowTPA(tpa, "audit1");
+
+		}
+		if (!parallels.contains(n0))// N0 is not initial
+		{
+			// Analyze *->N0->N1
+			// var bn = GetBackwardNodes(tpa, n0).Where(n => s1.Any(nx =>
+			// PMLogHelper.IsEquivalent(n, nx))).ToArray();
+			List<Node> bn = new ArrayList();
+			var bck = ConcurrentNodesHelper.GetBackwardNodes(n0);
+			for (var x : ConcurrentNodesHelper.GetBackwardNodes(n0)) {
+				if (s1.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
+					bn.add(x);
+				}
+			}
+
+			// if (bn.FirstOrDefault() is TPATemplate.Node x1)
+			if (bn.size() > 0) {
+				var x1 = bn.get(0);
+				if (x1 != n1) {
+					// tpa.AddNodeTransition(new Guid[] { x1.Id }, new Guid[] { n1.Id }, "");
+					CreateTransition(tpa, x1, n1);
+					// Utils.ShowTPA(tpa, "audit1");
+				}
+			} else {
+				var nprev = s1.stream().findFirst().get();
+				if (nprev != n1) {
+					// tpa.AddNodeTransition(new Guid[] { prev.Id }, new Guid[] { n1.Id }, "");
+					if (!Utils.IsEquivalent(n1, nprev)) {
+						CreateTransition(tpa, nprev, n1);
+						// Utils.ShowTPA(tpa, "audit1");
+					} else {
+						// FuseNodes(tpa, prev, n1);
+						CreateTransition(tpa, pre, n1);
+						// Utils.ShowTPA(tpa, "audit1");
+					}
+
+				}
+			}
+		} else {
+			CreateTransition(tpa, s1.stream().findFirst().get(), n1);
+			// Utils.ShowTPA(tpa, "audit1");
+		}
+		// Utils.ShowTPA(tpa, "audit1");
+	}
+
+	private Collection<Transition> getSimpleTransition(TPA tpa, Node n0, Node n1) {
+		var res = n0.getOutTransitions().stream().filter(
+				nt -> nt.getEndNodes().size() == 1 && nt.getEndNodes().stream().findFirst().get().getId() == n1.getId())
+				.toList();
+		return res;
+	}
+
 	private void CreateTransition(TPA tpa, Node n0, Node n1) {
-		var tx = new Transition(tpa);
-		tx.getSourceNodes().add(n0);
-		tx.getEndNodes().add(n1);
+		/*
+		 * var tx = new Transition(tpa); tx.getSourceNodes().add(n0);
+		 * tx.getEndNodes().add(n1);
+		 */
+		var t = tpa.createTransition(n0).addEnd(n1);
+		tpa.registerTransition(t);
+	}
+
+	private void CreateTransition(TPA tpa, Collection<Node> n0, Collection<Node> n1) {
+		/*
+		 * var tx = new Transition(tpa); tx.getSourceNodes().add(n0);
+		 * tx.getEndNodes().add(n1);
+		 */
+		var t = tpa.createTransition(n0).addEnd(n1);
+		tpa.registerTransition(t);
+	}
+
+	private void RemoveTransition(TPA tpa, Transition nt) {
+		/*
+		 * var tx = new Transition(tpa); tx.getSourceNodes().add(n0);
+		 * tx.getEndNodes().add(n1);
+		 */
+		tpa.removeTransition(nt);
 	}
 
 	// END APPLY PARALLEL REGION

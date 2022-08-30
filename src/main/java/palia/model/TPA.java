@@ -63,17 +63,27 @@ public class TPA {
 	}
 
 	public Transition createTransition(Node... sources) {
-		return new Transition(this).addSource(sources);
+		var res = new Transition(this).addSource(sources);
+		registerTransition(res);
+		return res;
+	}
+
+	public Transition createTransition(Collection<Node> sources) {
+		var res = new Transition(this).addSource(sources);
+		registerTransition(res);
+		return res;
 	}
 
 	public void registerTransition(Transition... T) {
 		for (Transition transition : T) {
-			transitions.add(transition);
-			for (Node n : transition.getSourceNodes()) {
-				n.Output.add(transition);
-			}
-			for (Node n : transition.getEndNodes()) {
-				n.Input.add(transition);
+			if (!transitions.contains(transition)) {
+				transitions.add(transition);
+				for (Node n : transition.getSourceNodes()) {
+					n.Output.add(transition);
+				}
+				for (Node n : transition.getEndNodes()) {
+					n.Input.add(transition);
+				}
 			}
 		}
 	}
