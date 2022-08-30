@@ -89,7 +89,7 @@ public class test {
 
 	public static TPA mine() {
 		Palia p = new Palia();
-		return p.mine(getLog4());
+		return p.mine(getLog9());
 	}
 
 	public static XLog getLog() {
@@ -154,6 +154,12 @@ public class test {
 		return getLogfromString(res);
 	}
 
+	public static XLog getLog3a() {
+		String res = "A X X1 Y Y1 D H\n" + "A X Y X1 Y1 D H\n" + "A Y Y1 X X1 D H\n" + "A Y X Y1 X1 D H\n"
+				+ "A X Y X1 Y1 D H\n" + "A Y Y1 X X1 D H";
+		return getLogfromString(res);
+	}
+
 	public static XLog getLog4() {
 		String res = "A C B D G\n" + "A B C D G\n" + "A E F T D H\n" + "A E F T E F T E F T D H\n" + "A W W W A\n"
 				+ "A J E F T J A\n" + "A X X1 Y Z Y1 Z1 D H\n" + "A X Z Y X1 Y1 Z1 D H\n" + "A Y Y1 Z Z1 X X1 D H\n"
@@ -187,6 +193,21 @@ public class test {
 	public static XLog getLog8() {
 		String res = "A B C D E F\n" + "A C B D E G\n" + "A D C B E G";
 		return getLogfromString(res);
+	}
+
+	public static XLog getLog9() {
+
+		String fn = "output/pdc_2020_0000000.xes";
+		XParser parser = new XesXmlParser();
+		XLog log;
+		try {
+			log = parser.parse(new File(fn)).get(0);
+			return log;
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	public static XLog getLogfromString(String s) {
