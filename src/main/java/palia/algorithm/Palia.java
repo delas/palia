@@ -544,14 +544,15 @@ public class Palia {
 			for (var n : parallels) {
 				CutsHelper.DeleteNode(tpa, n);
 			}
+			// Utils.ShowTPA(tpa, "audit1");
 			// recreate the region
-			tpa.registerNode((Node[]) parallels.toArray());
+			tpa.registerNode(parallels);
 			var st = new Transition(tpa);
 			st.addSource(prev);
-			st.addEnd((Node[]) parallels.toArray());
+			st.addEnd(parallels);
 			tpa.registerTransition(st);
 			var ot = new Transition(tpa);
-			ot.addSource((Node[]) parallels.toArray());
+			ot.addSource(parallels);
 			ot.addEnd(post);
 			tpa.registerTransition(ot);
 

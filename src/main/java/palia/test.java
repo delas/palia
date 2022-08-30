@@ -24,7 +24,7 @@ public class test {
 	public static void main(String[] args) throws Exception {
 
 		String fn = "output/pdc_2020_0000000.xes";
-		GraphExporter.exportSVG(mine(fn), new File("output/out.svg"));
+		GraphExporter.exportSVG(mine(), new File("output/out.svg"));
 		System.out.println("done");
 	}
 
@@ -89,7 +89,7 @@ public class test {
 
 	public static TPA mine() {
 		Palia p = new Palia();
-		return p.mine(getLog8());
+		return p.mine(getLog4());
 	}
 
 	public static XLog getLog() {

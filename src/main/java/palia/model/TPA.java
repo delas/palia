@@ -94,6 +94,12 @@ public class TPA {
 		}
 	}
 
+	public void registerNode(Collection<Node> N) {
+		for (Node node : N) {
+			nodes.add(node);
+		}
+	}
+
 	public Collection<Node> getStartingNodes() {
 		return nodes.stream().filter(n -> n.isStartingNode()).toList();
 	}
