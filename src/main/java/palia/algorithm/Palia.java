@@ -487,7 +487,8 @@ public class Palia {
 		if (rests != null) {
 			// Utils.ShowTPA(tpa, "audit0");
 			Collection<Collection<Node>> Sequences = rests.values(); // Values.Select(v => v.ToArray()).ToArray();
-			RemoveInterSplitTransitions(tpa, region, Sequences, parallels, prev, post);
+			// RemoveInterSplitTransitions(tpa, region, Sequences, parallels, prev, post);
+			FreeInterSplitNodes(tpa, region, Sequences, parallels, prev, post);
 			// Utils.ShowTPA(tpa, "audit1");
 			RemoveRepeatedTransitions(tpa);
 			// Utils.ShowTPA(tpa, "audit1");
@@ -678,12 +679,10 @@ public class Palia {
 		}
 	}
 
-	void RemoveInterSplitTransitions(TPA tpa, Collection<Node> region, Collection<Collection<Node>> Sequences,
+	void FreeInterSplitNodes(TPA tpa, Collection<Node> region, Collection<Collection<Node>> Sequences,
 			Collection<Node> parallels, Node pre, Node post) {
-		Collection<Transition> res = new ArrayList<Transition>();
 
 		List<List<Node>> ordered = new ArrayList<>();
-
 		for (var sx : Sequences) {
 
 			List<Node> s0 = new ArrayList(sx);
@@ -695,37 +694,88 @@ public class Palia {
 			ordered.add(GetForwardOrderedNodes(tpa, s0).stream().toList());
 		}
 
-		Utils.ShowTPA(tpa, "00000");
-		boolean haschanges = true;
-		while (haschanges) {
-			haschanges = false;
+		var nodes = GetForwardOrderedNodes(tpa, region);
+		for (var n : nodes) {
+			FreeInterSplitNode(tpa, n, region, ordered, parallels, pre, post);
+		}
 
-			var tx = getFirstInterSequenceTransition(tpa, ordered);
+	}
 
-			if (tx != null) {
-				var n0 = tx.getSourceNodes().stream().findFirst().get();
-				var n1 = tx.getEndNodes().stream().findFirst().get();
-				var s0 = ordered.stream().filter(x -> x.contains(n0)).findFirst().get();
-				var s1 = ordered.stream().filter(x -> x.contains(n1)).findFirst().get();
-				SolveInterSequence(tpa, n0, n1, s0, s1, pre, post, parallels, tx);
-				haschanges = true;
+	void FreeInterSplitNode(TPA tpa, Node n, Collection<Node> region, List<List<Node>> Sequences,
+			Collection<Node> parallels, Node pre, Node post) {
+
+		for (var it : n.getInTransitions()) {
+			if (isIntersequenceTransition(tpa, it, Sequences)) {
+				FreeInterSplitTransition(tpa, it, region, Sequences, parallels, pre, post);
 			}
 		}
-		Utils.ShowTPA(tpa, "Audit1");
-		/*
-		 * for (Collection<Node> s0 : Sequences) { for (Collection<Node> s1 : Sequences)
-		 * { if (s0 != s1) {
-		 * 
-		 * res.addAll(GetInterSplitTransitions(tpa, region, s0, s1, parallels, pre,
-		 * post));
-		 * 
-		 * } } }
-		 * 
-		 * // Utils.ShowTPA(tpa, "audit0"); // res.ForEach(nt =>
-		 * tpa.NodeTransitions.Remove(nt)); for (var nt : res) { //
-		 * Utils.removeifnotbreakingtransition(tpa, nt); tpa.removeTransition(nt); } //
-		 * Utils.ShowTPA(tpa, "audit1"); // Utils.CheckAuditError(tpa, "audit1");
-		 */
+
+		for (var ot : n.getOutTransitions()) {
+			if (isIntersequenceTransition(tpa, ot, Sequences)) {
+				FreeInterSplitTransition(tpa, ot, region, Sequences, parallels, pre, post);
+			}
+		}
+
+	}
+
+	void FreeInterSplitTransition(TPA tpa, Transition tx, Collection<Node> region, List<List<Node>> Sequences,
+			Collection<Node> parallels, Node pre, Node post) {
+		var n0 = tx.getSourceNodes().stream().findFirst().get();
+		var n1 = tx.getEndNodes().stream().findFirst().get();
+		var s0 = Sequences.stream().filter(x -> x.contains(n0)).findFirst().get();
+		var s1 = Sequences.stream().filter(x -> x.contains(n1)).findFirst().get();
+		SolveInterSequence(tpa, n0, n1, s0, s1, pre, post, parallels, tx);
+	}
+
+	void RemoveInterSplitTransitions(TPA tpa, Collection<Node> region, Collection<Collection<Node>> Sequences,
+			Collection<Node> parallels, Node pre, Node post) {
+		Collection<Transition> res = new ArrayList<Transition>();
+
+		if (true) { // ordered intersplit analysis
+			List<List<Node>> ordered = new ArrayList<>();
+
+			for (var sx : Sequences) {
+
+				List<Node> s0 = new ArrayList(sx);
+				for (var x : region) {
+					if (sx.stream().anyMatch(y -> Utils.IsEquivalent(x, y))) {
+						s0.add(x);
+					}
+				}
+				ordered.add(GetForwardOrderedNodes(tpa, s0).stream().toList());
+			}
+
+			Utils.ShowTPA(tpa, "00000");
+			boolean haschanges = true;
+			while (haschanges) {
+				haschanges = false;
+
+				var tx = getFirstInterSequenceTransition(tpa, ordered);
+
+				if (tx != null) {
+					var n0 = tx.getSourceNodes().stream().findFirst().get();
+					var n1 = tx.getEndNodes().stream().findFirst().get();
+					var s0 = ordered.stream().filter(x -> x.contains(n0)).findFirst().get();
+					var s1 = ordered.stream().filter(x -> x.contains(n1)).findFirst().get();
+					SolveInterSequence(tpa, n0, n1, s0, s1, pre, post, parallels, tx);
+					haschanges = true;
+				}
+			}
+			Utils.ShowTPA(tpa, "Audit1");
+
+		} else {
+
+			// no ordered intersplit analysis
+			for (Collection<Node> s0 : Sequences) {
+				for (Collection<Node> s1 : Sequences) {
+					if (s0 != s1) {
+
+						res.addAll(GetInterSplitTransitions(tpa, region, s0, s1, parallels, pre, post));
+
+					}
+				}
+			}
+		}
 
 	}
 
@@ -833,7 +883,10 @@ public class Palia {
 	}
 
 	private void CorrectTPA(TPA tpa) {
-		// RemoveRepeatedTransitions(tpa);
+		RemoveRepeatedTransitions(tpa);
+		// tpa = BackwardMerge(tpa, TransitionsMergeMode.Extrict);
+		// tpa = ForwardMerge(tpa, TransitionsMergeMode.Extrict);
+
 	}
 
 	private void SolveInterSequence(TPA tpa, Node n0, Node n1, Collection<Node> s0, Collection<Node> s1, Node pre,

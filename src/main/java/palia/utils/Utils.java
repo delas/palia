@@ -1,5 +1,7 @@
 package palia.utils;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -9,6 +11,7 @@ import org.deckfour.xes.extension.std.XConceptExtension;
 import org.deckfour.xes.model.XLog;
 import org.deckfour.xes.model.XTrace;
 
+import palia.graphviz.exporter.GraphExporter;
 import palia.model.Node;
 import palia.model.TPA;
 import palia.model.Transition;
@@ -81,6 +84,7 @@ public class Utils {
 	}
 
 	static Integer index0 = 0;
+	static boolean EnabledShowTPA = false;
 
 	public static void ShowTPATrace(TPA tpa, String output) {
 
@@ -91,11 +95,13 @@ public class Utils {
 
 	public static void ShowTPA(TPA tpa, String output) {
 
-		/*
-		 * try { GraphExporter.exportSVG(tpa, new File("output/" + output + ".svg")); }
-		 * catch (IOException e) { // TODO Auto-generated catch // block //
-		 * e.printStackTrace(); } }
-		 */
+		if (EnabledShowTPA) {
+			try {
+				GraphExporter.exportSVG(tpa, new File("output/" + output + ".svg"));
+			} catch (IOException e) { // TODO Auto-generated catch // block //
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public static Map<List<String>, Integer> extractVariants(XLog log) {
