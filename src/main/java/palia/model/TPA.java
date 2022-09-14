@@ -18,10 +18,15 @@ public class TPA {
 
 	private Set<Transition> transitions;
 
+	private Set<State> states;
+	private Set<StateTransition> stateTransitions;
+
 	public TPA() {
 		this.name = UUID.randomUUID();
 		this.nodes = new HashSet<>();
 		this.transitions = new HashSet<>();
+		this.states = new HashSet<>();
+		this.stateTransitions = new HashSet<>();
 	}
 
 	public Node createNode(String name) {
@@ -38,6 +43,27 @@ public class TPA {
 
 	public Set<Transition> iterateTransitions() {
 		return transitions;
+	}
+
+	public void ClearStates() {
+		states.clear();
+		stateTransitions.clear();
+	}
+
+	public void AddState(State s) {
+		states.add(s);
+	}
+
+	public Collection<State> IterateStates() {
+		return states;
+	}
+
+	public Collection<StateTransition> IterateStateTransitions() {
+		return stateTransitions;
+	}
+
+	public void AddStateTransition(StateTransition s) {
+		stateTransitions.add(s);
 	}
 
 	public boolean hasNode(Node n) {
@@ -106,6 +132,14 @@ public class TPA {
 
 	public Collection<Node> getFinalNodes() {
 		return nodes.stream().filter(n -> n.isFinalNode()).toList();
+	}
+
+	public Collection<State> getInitialStates() {
+		return states.stream().filter(n -> n.IsInitial()).toList();
+	}
+
+	public Collection<State> getFinalStates() {
+		return states.stream().filter(n -> n.IsFinal()).toList();
 	}
 
 	public Set<Transition> getExclusiveTransitionsfromSourceNodes(Collection<Node> n) {

@@ -1,6 +1,7 @@
 package palia;
 
 import java.io.File;
+import java.util.List;
 
 import org.deckfour.xes.extension.std.XConceptExtension;
 import org.deckfour.xes.factory.XFactory;
@@ -16,6 +17,7 @@ import palia.graphviz.exporter.GraphExporter;
 import palia.model.Node;
 import palia.model.TPA;
 import palia.model.Transition;
+import palia.utils.ConformanceTPA;
 
 public class test {
 
@@ -24,7 +26,8 @@ public class test {
 	public static void main(String[] args) throws Exception {
 
 		String fn = "output/pdc_2020_0000000.xes";
-		GraphExporter.exportSVG(mine(), new File("output/out.svg"));
+		var tpa = mine();
+		GraphExporter.exportSVG(tpa, new File("output/out.svg"));
 		System.out.println("done");
 	}
 
@@ -89,7 +92,35 @@ public class test {
 
 	public static TPA mine() {
 		Palia p = new Palia();
-		return p.mine(getLog9());
+		var log = getLog3();
+		var res = p.mine(log);
+
+		return res;
+	}
+
+	public static TPA mineandtest() {
+		Palia p = new Palia();
+		var log = getLog3();
+		var res = p.mine(log);
+
+		String logtest = "A X X1 Y Z Y1 Z1 D H\n" + "X1 A X Y Z Y1 Z1 D H\n" + "A X Z Y X1 Y1 Z1 D H\n"
+				+ "A Y Y1 Z Z1 X X1 D H\n" + "A Y X Y1 X1 Z Z1 D H\n" + "A Z Z1 X Y X1 Y1 D H\n"
+				+ "A Z Y Z1 Y1 X X1 D H";
+		var testlog = getLogfromString(logtest);
+		ConformanceTPA.CreateStates(res);
+		for (var trc : testlog) {
+
+			List<String> tstring = trc.stream().map(e -> XConceptExtension.instance().extractName(e)).toList();
+			var tracename = String.join(" ", tstring);
+
+			if (ConformanceTPA.TraceFit(res, trc)) {
+				System.out.println("Trace [" + tracename + "] Fits");
+			} else {
+				System.out.println("Trace [" + tracename + "] Not Fits");
+			}
+		}
+
+		return res;
 	}
 
 	public static XLog getLog() {
@@ -208,6 +239,11 @@ public class test {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public static XLog getLog10() {
+		String res = "A D E F\n" + "A E F\n" + "B D E F\n" + "C D E F";
+		return getLogfromString(res);
 	}
 
 	public static XLog getLogfromString(String s) {
