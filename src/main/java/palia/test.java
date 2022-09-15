@@ -17,7 +17,7 @@ import palia.graphviz.exporter.GraphExporter;
 import palia.model.Node;
 import palia.model.TPA;
 import palia.model.Transition;
-import palia.utils.ConformanceTPA;
+import palia.utils.TraceFitPath;
 
 public class test {
 
@@ -103,17 +103,19 @@ public class test {
 		var log = getLog3();
 		var res = p.mine(log);
 
-		String logtest = "A X X1 Y Z Y1 Z1 D H\n" + "X1 A X Y Z Y1 Z1 D H\n" + "A X Z Y X1 Y1 Z1 D H\n"
+		String logtest = "A X X1 Y Z Y1 Z1 D H\n" + "A X X1 Y1 Y Z Z1 D H\n" + "A X Z Y X1 Y1 Z1 D H\n"
 				+ "A Y Y1 Z Z1 X X1 D H\n" + "A Y X Y1 X1 Z Z1 D H\n" + "A Z Z1 X Y X1 Y1 D H\n"
 				+ "A Z Y Z1 Y1 X X1 D H";
 		var testlog = getLogfromString(logtest);
-		ConformanceTPA.CreateStates(res);
+		// ConformanceTPA.CreateStates(res);
+		TraceFitPath.ReindexParallelTranstions(res);
 		for (var trc : testlog) {
 
 			List<String> tstring = trc.stream().map(e -> XConceptExtension.instance().extractName(e)).toList();
 			var tracename = String.join(" ", tstring);
 
-			if (ConformanceTPA.TraceFit(res, trc)) {
+			// if (ConformanceTPA.TraceFit(res, trc)) {
+			if (TraceFitPath.TraceFit2(res, trc)) {
 				System.out.println("Trace [" + tracename + "] Fits");
 			} else {
 				System.out.println("Trace [" + tracename + "] Not Fits");
