@@ -181,6 +181,9 @@ public class Palia {
 			n0.Output.add(ot);
 		}
 
+		n0.setStartingNode(n0.isStartingNode() || n1.isStartingNode());
+		n0.setFinalNode(n0.isFinalNode() || n1.isFinalNode());
+
 		tpa.removeNode(n1);
 	}
 
