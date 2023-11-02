@@ -43,14 +43,14 @@ public class TPAToDot {
 		for (Node n : tpa.iterateNodes()) {
 			Set<Transition> outgoing = n.getOutTransitions(false);
 			if (outgoing.size() > 1) {
-				DotNode gateway = makeGatewayNode(dot, "&times;");
+				DotNode gateway = makeGatewayNode(dot, "x");
 				makeEdge(dot, idToStartNodes.get(n.getId()), gateway);
 				idToStartNodes.put(n.getId(), gateway);
 			}
 
 			Set<Transition> incoming = n.getInTransitions(false);
 			if (incoming.size() > 1) {
-				DotNode gateway = makeGatewayNode(dot, "&times;");
+				DotNode gateway = makeGatewayNode(dot, "x");
 				makeEdge(dot, gateway, idToTargetNodes.get(n.getId()));
 				idToTargetNodes.put(n.getId(), gateway);
 			}
@@ -138,8 +138,9 @@ public class TPAToDot {
 	}
 
 	private static DotNode makeGatewayNode(Dot dot, String name) {
-		DotNode dotNode = dot.addNode(
-				"<<table border='0'><tr><td></td></tr><tr><td valign='bottom'>" + name + "</td></tr></table>>");
+		// DotNode dotNode = dot.addNode("<<table border='0'><tr><td></td></tr><tr><td
+		// valign='bottom'>" + name + "</td></tr></table>>");
+		DotNode dotNode = dot.addNode(name);
 		dotNode.setOption("shape", "diamond");
 		dotNode.setOption("style", "filled");
 		dotNode.setOption("fillcolor", "white");
@@ -148,7 +149,7 @@ public class TPAToDot {
 
 		dotNode.setOption("width", "0.4");
 		dotNode.setOption("height", "0.4");
-		dotNode.setOption("fontsize", "30");
+		dotNode.setOption("fontsize", "20");
 		dotNode.setOption("fixedsize", "true");
 
 		return dotNode;

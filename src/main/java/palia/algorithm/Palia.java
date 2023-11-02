@@ -32,6 +32,10 @@ public class Palia {
 		return mine(log, new CLIPaliaMinerStatusUpdater());
 	}
 
+	public TPA minev2(XLog log) {
+		return minev2(log, new CLIPaliaMinerStatusUpdater());
+	}
+
 	public TPA mine(XLog log, PaliaMinerStatusUpdater updater) {
 		updater.update(PaliaMinerStatus.EXTRACT_LOG_VARIANTS, true);
 		Map<List<String>, Integer> logToProcess = Utils.extractVariants(log);
@@ -63,6 +67,72 @@ public class Palia {
 		MineOnwardMerge(res, TransitionsMergeMode.Inline);
 		updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_1, false);
 		// ShowTPA(res);
+
+		updater.update(PaliaMinerStatus.PARALLEL_FORWARD_MERGE, true);
+		res = ParallelForwardMerge(res);
+		updater.update(PaliaMinerStatus.PARALLEL_FORWARD_MERGE, false);
+
+		updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_2, true);
+		res = MineOnwardMerge(res, TransitionsMergeMode.Equivalent);
+		updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_2, false);
+
+		updater.update(PaliaMinerStatus.REMOVE_REPEATED_TRANSITIONS, true);
+		RemoveRepeatedTransitions(res);
+		updater.update(PaliaMinerStatus.REMOVE_REPEATED_TRANSITIONS, false);
+
+//		if (transmode == TransitionsMergeMode.Equivalent) {
+//			while (nodesnumber > res.getNodes().size()) {
+//				nodesnumber = res.getNodes().size();
+//				res = BackwardMerge(res, MergingPolicy);
+//				res = ForwardMerge(res, MergingPolicy);
+//			}
+//		}
+
+		return res;
+	}
+
+	public TPA minev2(XLog log, PaliaMinerStatusUpdater updater) {
+		updater.update(PaliaMinerStatus.EXTRACT_LOG_VARIANTS, true);
+		Map<List<String>, Integer> logToProcess = Utils.extractVariants(log);
+		updater.update(PaliaMinerStatus.EXTRACT_LOG_VARIANTS, false);
+
+		updater.update(PaliaMinerStatus.SIMPLE_ACCEPTOR_TREE, true);
+
+		TPA res = new TPA();
+		var x = logToProcess.keySet();
+		int index = 0;
+		for (List<String> t : x) {
+
+			System.out.println(index + "/" + x.size());
+			index++;
+			res = UpdateAcceptorTree(res, t);
+			// updater.update(PaliaMinerStatus.CONSECUTIVE_MERGE, true);
+			res = ConsecutiveMerge(res);
+			// updater.update(PaliaMinerStatus.CONSECUTIVE_MERGE, false);
+			// updater.update(PaliaMinerStatus.REMOVE_REPEATED_TRANSITIONS, true);
+			RemoveRepeatedTransitions(res);
+			// updater.update(PaliaMinerStatus.REMOVE_REPEATED_TRANSITIONS, false);
+			// updater.update(PaliaMinerStatus.FUSE_END_NODES, true);
+			FuseEndNodes(res);
+			// updater.update(PaliaMinerStatus.FUSE_END_NODES, false);
+			// TODO: MIlestones is for Interactive Palia
+			// (Alert: This implementation said always J for milestone)
+			// updater.update(PaliaMinerStatus.FUSE_MILESTONES, true);
+			FuseMilestones(res);
+			// updater.update(PaliaMinerStatus.FUSE_MILESTONES, false);
+
+			// updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_1, true);
+			MineOnwardMerge(res, TransitionsMergeMode.Inline);
+			// updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_1, false);
+
+		}
+
+		updater.update(PaliaMinerStatus.SIMPLE_ACCEPTOR_TREE, false);
+
+		/*
+		 * try { GraphExporter.exportSVG(res, new File("output/Merge.svg")); } catch
+		 * (IOException e) { // TODO Auto-generated catch block e.printStackTrace(); }
+		 */
 
 		updater.update(PaliaMinerStatus.PARALLEL_FORWARD_MERGE, true);
 		res = ParallelForwardMerge(res);

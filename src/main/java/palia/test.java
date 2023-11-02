@@ -92,7 +92,7 @@ public class test {
 
 	public static TPA mine() {
 		Palia p = new Palia();
-		var log = getLog3();
+		var log = getLog9();
 		var res = p.mine(log);
 
 		return res;
@@ -245,6 +245,11 @@ public class test {
 
 	public static XLog getLog10() {
 		String res = "A D E F\n" + "A E F\n" + "B D E F\n" + "C D E F";
+		return getLogfromString(res);
+	}
+
+	public static XLog getLog11() {
+		String res = "A C B B1 D D H A\n" + "A B B1 C D H D D H A\n" + "A D H D D H D H A\n";
 		return getLogfromString(res);
 	}
 
