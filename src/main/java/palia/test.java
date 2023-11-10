@@ -92,7 +92,8 @@ public class test {
 
 	public static TPA mine() {
 		Palia p = new Palia();
-		var log = getLog9();
+		var log = getLogFile("C:/Carlos/Proyectos/DatosPalia/XES/Training Logs/pdc_2020_0101000.xes");
+		// var log = getLog9();
 		var res = p.mine(log);
 
 		return res;
@@ -251,6 +252,20 @@ public class test {
 	public static XLog getLog11() {
 		String res = "A C B B1 D D H A\n" + "A B B1 C D H D D H A\n" + "A D H D D H D H A\n";
 		return getLogfromString(res);
+	}
+
+	public static XLog getLogFile(String fn) {
+
+		XParser parser = new XesXmlParser();
+		XLog log;
+		try {
+			log = parser.parse(new File(fn)).get(0);
+			return log;
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	public static XLog getLogfromString(String s) {

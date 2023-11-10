@@ -25,7 +25,11 @@ import palia.utils.Utils;
 
 public class Palia {
 
+	public String versionOnwardMerge = "v2";
+	public double OnwardMergeAproximation = 0;
+
 	public static List<String> MILESTONES = Arrays.asList("MM");
+
 	private ParallelIdentificationMode ParallelIdentificationPolicy = ParallelIdentificationMode.SplitConcurrence;
 
 	public TPA mine(XLog log) {
@@ -158,12 +162,32 @@ public class Palia {
 	}
 
 	private TPA MineOnwardMerge(TPA tpa, TransitionsMergeMode mode) {
+		if (versionOnwardMerge == "v2") {
+			return MineOnwardMergev2(tpa, mode);
+		}
+
+		return MineOnwardMergev1(tpa, mode);
+	}
+
+	private TPA MineOnwardMergev1(TPA tpa, TransitionsMergeMode mode) {
 		int nodesnumber = Integer.MAX_VALUE;
 		while (nodesnumber > tpa.iterateNodes().size()) {
 			nodesnumber = tpa.iterateNodes().size();
 			tpa = BackwardMerge(tpa, TransitionsMergeMode.Extrict);
 			tpa = ForwardMerge(tpa, TransitionsMergeMode.Extrict);
 			tpa = BackwardMerge(tpa, mode);
+			tpa = ForwardMerge(tpa, mode);
+		}
+		return tpa;
+	}
+
+	private TPA MineOnwardMergev2(TPA tpa, TransitionsMergeMode mode) {
+		int nodesnumber = Integer.MAX_VALUE;
+		while (nodesnumber > tpa.iterateNodes().size()) {
+			nodesnumber = tpa.iterateNodes().size();
+			tpa = AproximateBackwardMerge(tpa, TransitionsMergeMode.Extrict);
+			tpa = ForwardMerge(tpa, TransitionsMergeMode.Extrict);
+			tpa = AproximateBackwardMergev2(tpa, mode);
 			tpa = ForwardMerge(tpa, mode);
 		}
 		return tpa;
@@ -391,6 +415,248 @@ public class Palia {
 					}
 				}
 				RemoveRepeatedTransitions(tpa, nodes);
+			}
+		}
+		return tpa;
+	}
+
+	private Map<Transition, Collection<Transition>> GetBackwardCache(TPA tpa) {
+		return GetBackwardCache(tpa, 50);
+	}
+
+	private Set<Transition> GetNextTransitions(Transition nt) {
+		Set<Transition> res = new HashSet<Transition>();
+
+		for (var i : nt.getEndNodes()) {
+			for (var t : i.getOutTransitions()) {
+				if (!t.isParallel())
+					res.add(t);
+			}
+		}
+		return res;
+	}
+
+	private Set<Transition> GetPreviousTransitions(Transition nt) {
+		Set<Transition> res = new HashSet<Transition>();
+
+		for (var i : nt.getSourceNodes()) {
+			for (var t : i.getInTransitions()) {
+				if (!t.isParallel())
+					res.add(t);
+			}
+		}
+		return res;
+	}
+
+	private Map<Transition, Collection<Transition>> GetBackwardCache(TPA tpa, int autoperformed) {
+		Map<Transition, Collection<Transition>> res = new HashMap<Transition, Collection<Transition>>();
+		var S0 = new HashSet<Transition>();
+		// Starting Transitions
+		for (var n : tpa.getStartingNodes()) {
+			for (var t : n.Output) {
+				res.put(t, new ArrayList<Transition>());
+				S0.addAll(GetNextTransitions(t));
+			}
+		}
+		// body
+		while (S0.size() > 0) {
+			Boolean change = false;
+			for (Transition t : S0.toArray(new Transition[0])) {
+				if (res.containsKey(t)) {
+					S0.remove(t);
+				} else {
+					var nxt = GetPreviousTransitions(t);
+					if (nxt.stream().allMatch(x -> res.containsKey(x))) {
+						change = true;
+						Collection<Transition> aux = new HashSet<>(nxt);
+						for (var x : nxt) {
+							aux.addAll(res.get(x));
+						}
+
+						res.put(t, aux);
+						S0.addAll(GetNextTransitions(t).stream().filter(x -> !res.containsKey(x)).toList());
+						S0.remove(t);
+					}
+				}
+			}
+			if (!change) {
+
+				var objs = S0.stream().limit(autoperformed).toArray();
+
+				for (Object t0 : objs) {
+					Transition t = (Transition) t0;
+					res.put(t, GetAccesibleTransitions(tpa, t, true));
+
+					for (Transition tx : res.get(t)) {
+						S0.addAll(GetNextTransitions(tx).stream().filter(x -> !res.containsKey(x)).toList());
+					}
+					S0.remove(t);
+				}
+			}
+		}
+
+		return res;
+
+	}
+
+	private TPA AproximateBackwardMergev2(TPA tpa, TransitionsMergeMode mode) {
+		boolean ischanged = true;
+		while (ischanged) {
+			if (mode == TransitionsMergeMode.Inline)
+				BackwardCache = GetBackwardCache(tpa);
+			ischanged = false;
+			int changes = 0;
+
+			Set<Transition> transitions = new HashSet<>(tpa.iterateTransitions());
+
+			for (Transition nt0 : transitions) {
+				if (!tpa.hasTransition(nt0))
+					continue;
+
+				Collection<Transition> subtrans = null;
+				switch (mode) {
+				case Extrict:
+
+					// subtrans = nt0.getEndNodes().First().getInTransitions().Where(nt => nt !=
+					// nt0).ToArray();
+					subtrans = nt0.getEndNodes().stream().findFirst().get().getInput().stream().filter(nt -> nt != nt0)
+							.toList();
+					break;
+				case Inline:
+					// subtrans = GetAccesibleTransitions(tpa, nt0, true);
+					subtrans = BackwardCache.get(nt0);
+					break;
+				case Equivalent:
+				default:
+					subtrans = transitions.stream().filter(nt -> nt != nt0).toList();
+					break;
+
+				}
+				for (Transition nt1 : subtrans) {
+
+					if (!tpa.hasTransition(nt1))
+						continue;
+
+					Node n0 = nt0.getSourceNodes().iterator().next();
+					Node n1 = nt1.getSourceNodes().iterator().next();
+					Node f0 = nt0.getEndNodes().iterator().next();
+					Node f1 = nt1.getEndNodes().iterator().next();
+
+					switch (mode) {
+					case Extrict:
+						if (n0 != n1 && f0.getId().equals(f1.getId()) && Utils.IsEquivalent(n0, n1)) {
+							FuseNodes(tpa, n0, n1);
+							tpa.removeTransition(nt1);
+							changes++;
+						}
+						break;
+					case Inline:
+					case Equivalent:
+						if (n0 != n1 && Utils.IsEquivalent(f0, f1) && Utils.IsEquivalent(n0, n1)) {
+							FuseNodes(tpa, n0, n1);
+							if (f0 != f1) {
+								FuseNodes(tpa, f0, f1);
+							}
+							tpa.removeTransition(nt0);
+							changes++;
+						}
+						break;
+					case None:
+						break;
+					}
+
+				}
+				RemoveRepeatedTransitions(tpa);
+				ischanged = (changes > OnwardMergeAproximation * tpa.iterateTransitions().size());
+				// ischanged = (changes > 0);
+			}
+		}
+		return tpa;
+	}
+
+	Map<Transition, Collection<Transition>> BackwardCache = null;
+
+	private TPA AproximateBackwardMerge(TPA tpa, TransitionsMergeMode mode) {
+		boolean ischanged = true;
+		while (ischanged) {
+
+			if (mode == TransitionsMergeMode.Inline)
+				BackwardCache = GetBackwardCache(tpa);
+			ischanged = false;
+			int changes = 0;
+			Set<Node> dincol = new HashSet<>(tpa.iterateNodes());
+			for (Node n : dincol) {
+
+				Collection<Node> nodes = new HashSet<>();
+				nodes.add(n);
+				switch (mode) {
+				case Extrict:
+					break;
+				case Equivalent:
+					nodes = GetEquivalentNodes(tpa, n);
+					break;
+				case Inline:
+					nodes = GetEquivalentNodes(tpa, n);
+					break;
+				case None:
+					break;
+				}
+				Collection<Transition> transitions = GetNodeTransitionsbyEndNodes(tpa, nodes);
+				for (Transition nt0 : transitions) {
+					Collection<Transition> subtrans = null;
+					switch (mode) {
+					case Extrict:
+						subtrans = nt0.getEndNodes().stream().findFirst().get().getInput().stream()
+								.filter(nt -> nt != nt0).toList();
+						break;
+					case Inline:
+						// subtrans = GetAccesibleTransitions(tpa, nt0, true);
+
+						subtrans = BackwardCache.get(nt0);
+						break;
+					case Equivalent:
+					default:
+						subtrans = transitions.stream().filter(nt -> nt != nt0).toList();
+						break;
+
+					}
+					/*
+					 * if (mode != TransitionsMergeMode.Inline) { subtrans =
+					 * transitions.stream().filter(nt -> nt != nt0).toList(); } else { subtrans =
+					 * GetAccesibleTransitions(tpa, nt0, true); }
+					 */
+					for (Transition nt1 : subtrans) {
+						Node n0 = nt0.getSourceNodes().iterator().next();
+						Node n1 = nt1.getSourceNodes().iterator().next();
+						Node f0 = nt0.getEndNodes().iterator().next();
+						Node f1 = nt1.getEndNodes().iterator().next();
+
+						switch (mode) {
+						case Extrict:
+							if (n0 != n1 && f0.getId().equals(f1.getId()) && Utils.IsEquivalent(n0, n1)) {
+								FuseNodes(tpa, n0, n1);
+								tpa.removeTransition(nt1);
+								changes++;
+							}
+							break;
+						case Inline:
+						case Equivalent:
+							if (n0 != n1 && Utils.IsEquivalent(f0, f1) && Utils.IsEquivalent(n0, n1)) {
+								FuseNodes(tpa, n0, n1);
+								if (f0 != f1) {
+									FuseNodes(tpa, f0, f1);
+								}
+								tpa.removeTransition(nt0);
+								changes++;
+							}
+							break;
+						case None:
+							break;
+						}
+					}
+				}
+				RemoveRepeatedTransitions(tpa, nodes);
+				ischanged = (changes > OnwardMergeAproximation * tpa.iterateTransitions().size());
 			}
 		}
 		return tpa;
