@@ -97,7 +97,7 @@ public class test {
 		// Logs/pdc_2020_0101000.xes");
 		// var log = getLog9();
 
-		var log = getLog5();
+		var log = getLog3();
 
 		var res = p.mine(log);
 

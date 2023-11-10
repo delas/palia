@@ -117,8 +117,8 @@ public class ConcurrentNodesHelper {
 	 */
 
 	public static Collection<Transition> GetBackwardTransitions(Node n0) {
-		Collection<Transition> res = new HashSet<>();
-		Collection<Transition> transitions = new HashSet<>();
+		Collection<Transition> res = new ArrayList<>();
+		Collection<Transition> transitions = new ArrayList<>();
 		transitions.addAll(n0.getInTransitions());
 		while (transitions.size() > 0) {
 			Transition t = transitions.iterator().next();
@@ -134,8 +134,8 @@ public class ConcurrentNodesHelper {
 	}
 
 	public static Collection<Transition> GetForwardTransitions(Node n0) {
-		Collection<Transition> res = new HashSet<>();
-		Collection<Transition> transitions = new HashSet<>();
+		Collection<Transition> res = new ArrayList<>();
+		Collection<Transition> transitions = new ArrayList<>();
 		transitions.addAll(n0.getOutTransitions());
 		while (transitions.size() > 0) {
 			Transition t = transitions.iterator().next();
