@@ -92,8 +92,13 @@ public class test {
 
 	public static TPA mine() {
 		Palia p = new Palia();
-		var log = getLogFile("C:/Carlos/Proyectos/DatosPalia/XES/Training Logs/pdc_2020_0101000.xes");
+
+		// var log = getLogFile("C:/Carlos/Proyectos/DatosPalia/XES/Training
+		// Logs/pdc_2020_0101000.xes");
 		// var log = getLog9();
+
+		var log = getLog5();
+
 		var res = p.mine(log);
 
 		return res;
