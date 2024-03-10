@@ -13,6 +13,7 @@ import org.deckfour.xes.model.XLog;
 import org.deckfour.xes.model.XTrace;
 
 import palia.algorithm.Palia;
+import palia.algorithm.TransitionsMergeMode;
 import palia.graphviz.exporter.GraphExporter;
 import palia.model.Node;
 import palia.model.TPA;
@@ -23,11 +24,48 @@ public class test {
 
 	private static XFactory factory = new XFactoryNaiveImpl();
 
+	public static TPA mine() {
+		var log = getLog0();
+		return mine(log, TransitionsMergeMode.Equivalent);
+	}
+
+	public static TPA mine(XLog log, TransitionsMergeMode mode) {
+		Palia p = new Palia();
+
+		// var log = getLogFile("C:/Carlos/Proyectos/DatosPalia/XES/Training
+		// Logs/pdc_2020_0101000.xes");
+		// var log = getLog9();
+
+		var res = p.mine(log, mode);
+
+		return res;
+	}
+
+	public static XLog getLogz1() {
+		String res = "A B C D\r\n" + "A C B D\r\n" + "A B E D";
+		return getLogfromString(res);
+	}
+
+	public static XLog getLog12() {
+		String res = "A B C D E F\n" + "A C B D E G\n" + "A D C B E G\n" + "A D C B A D E G\n";
+		return getLogfromString(res);
+	}
+
+	public static XLog getLog13() {
+		String res = "A B C D E F\n" + "A C B D E G\n" + "A C B E G\n" + "A C B A D E G\n";
+		return getLogfromString(res);
+	}
+
 	public static void main(String[] args) throws Exception {
 
-		String fn = "output/pdc_2020_0000000.xes";
-		var tpa = mine();
-		GraphExporter.exportSVG(tpa, new File("output/out.svg"));
+		// String fn = "output/pdc_2020_0000000.xes";
+		var log = getLog11();
+		// var tpa = mine(log, TransitionsMergeMode.Extrict);
+		// var tpa2 = mine(log, TransitionsMergeMode.Inline);
+		var tpa3 = mine(log, TransitionsMergeMode.Equivalent);
+		// GraphExporter.exportSVG(tpa, new File("output/Extrict.svg"));
+		// GraphExporter.exportSVG(tpa2, new File("output/Inline.svg"));
+		GraphExporter.exportSVG(tpa3, new File("output/Equivalent.svg"));
 		System.out.println("done");
 	}
 
@@ -88,20 +126,6 @@ public class test {
 		XParser parser = new XesXmlParser();
 		XLog log = parser.parse(new File(filename)).get(0);
 		return p.mine(log);
-	}
-
-	public static TPA mine() {
-		Palia p = new Palia();
-
-		// var log = getLogFile("C:/Carlos/Proyectos/DatosPalia/XES/Training
-		// Logs/pdc_2020_0101000.xes");
-		// var log = getLog9();
-
-		var log = getLog3();
-
-		var res = p.mine(log);
-
-		return res;
 	}
 
 	public static TPA mineandtest() {

@@ -1,5 +1,7 @@
 package palia.algorithm;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,6 +20,7 @@ import org.deckfour.xes.model.XLog;
 import palia.algorithm.callback.CLIPaliaMinerStatusUpdater;
 import palia.algorithm.callback.PaliaMinerStatus;
 import palia.algorithm.callback.PaliaMinerStatusUpdater;
+import palia.graphviz.exporter.GraphExporter;
 import palia.model.Node;
 import palia.model.TPA;
 import palia.model.Transition;
@@ -25,7 +28,7 @@ import palia.utils.Utils;
 
 public class Palia {
 
-	public String versionOnwardMerge = "v2";
+	public String versionOnwardMerge = "v1";
 	public double OnwardMergeAproximation = 0;
 
 	public static List<String> MILESTONES = Arrays.asList("MM");
@@ -33,14 +36,31 @@ public class Palia {
 	private ParallelIdentificationMode ParallelIdentificationPolicy = ParallelIdentificationMode.SplitConcurrence;
 
 	public TPA mine(XLog log) {
-		return mine(log, new CLIPaliaMinerStatusUpdater());
+		return mine(log, new CLIPaliaMinerStatusUpdater(), TransitionsMergeMode.Equivalent);
+	}
+
+	public TPA mine(XLog log, TransitionsMergeMode mode) {
+		return mine(log, new CLIPaliaMinerStatusUpdater(), mode);
 	}
 
 	public TPA minev2(XLog log) {
-		return minev2(log, new CLIPaliaMinerStatusUpdater());
+		return minev2(log, new CLIPaliaMinerStatusUpdater(), TransitionsMergeMode.Equivalent);
 	}
 
-	public TPA mine(XLog log, PaliaMinerStatusUpdater updater) {
+	public TPA minev2(XLog log, TransitionsMergeMode mode) {
+		return minev2(log, new CLIPaliaMinerStatusUpdater(), mode);
+	}
+
+	public void ShowTPA(TPA tpa, String name) {
+		try {
+			GraphExporter.exportSVG(tpa, new File("output/" + name + ".svg"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public TPA mine(XLog log, PaliaMinerStatusUpdater updater, TransitionsMergeMode mode) {
 		updater.update(PaliaMinerStatus.EXTRACT_LOG_VARIANTS, true);
 		Map<List<String>, Integer> logToProcess = Utils.extractVariants(log);
 		updater.update(PaliaMinerStatus.EXTRACT_LOG_VARIANTS, false);
@@ -48,11 +68,11 @@ public class Palia {
 		updater.update(PaliaMinerStatus.SIMPLE_ACCEPTOR_TREE, true);
 		TPA res = SimpleAcceptorTree(logToProcess.keySet(), 0);
 		updater.update(PaliaMinerStatus.SIMPLE_ACCEPTOR_TREE, false);
-
+		// ShowTPA(res, "AcceptorTree");
 		updater.update(PaliaMinerStatus.CONSECUTIVE_MERGE, true);
 		res = ConsecutiveMerge(res);
 		updater.update(PaliaMinerStatus.CONSECUTIVE_MERGE, false);
-
+		// ShowTPA(res, "ConsecutiveMerge");
 		updater.update(PaliaMinerStatus.REMOVE_REPEATED_TRANSITIONS, true);
 		RemoveRepeatedTransitions(res);
 		updater.update(PaliaMinerStatus.REMOVE_REPEATED_TRANSITIONS, false);
@@ -68,16 +88,27 @@ public class Palia {
 		updater.update(PaliaMinerStatus.FUSE_MILESTONES, false);
 
 		updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_1, true);
-		MineOnwardMerge(res, TransitionsMergeMode.Inline);
+		TransitionsMergeMode auxmode = TransitionsMergeMode.Inline;
+		if (mode == TransitionsMergeMode.Extrict) {
+			auxmode = TransitionsMergeMode.Extrict;
+		}
+
+		// auxmode = mode;
+
+		MineOnwardMerge(res, auxmode);
 		updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_1, false);
 		// ShowTPA(res);
+		// ShowTPA(res, "Inline");
+
+		// ShowTPA(res, "medium");
+		// ShowTPA(res, "OnwardMerge");
 
 		updater.update(PaliaMinerStatus.PARALLEL_FORWARD_MERGE, true);
 		res = ParallelForwardMerge(res);
 		updater.update(PaliaMinerStatus.PARALLEL_FORWARD_MERGE, false);
 
 		updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_2, true);
-		res = MineOnwardMerge(res, TransitionsMergeMode.Equivalent);
+		res = MineOnwardMerge(res, mode);
 		updater.update(PaliaMinerStatus.MINE_ONWARD_MERGE_2, false);
 
 		updater.update(PaliaMinerStatus.REMOVE_REPEATED_TRANSITIONS, true);
@@ -95,7 +126,7 @@ public class Palia {
 		return res;
 	}
 
-	public TPA minev2(XLog log, PaliaMinerStatusUpdater updater) {
+	public TPA minev2(XLog log, PaliaMinerStatusUpdater updater, TransitionsMergeMode mode) {
 		updater.update(PaliaMinerStatus.EXTRACT_LOG_VARIANTS, true);
 		Map<List<String>, Integer> logToProcess = Utils.extractVariants(log);
 		updater.update(PaliaMinerStatus.EXTRACT_LOG_VARIANTS, false);
